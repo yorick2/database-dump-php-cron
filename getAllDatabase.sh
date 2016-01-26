@@ -1,28 +1,29 @@
 #!/bin/bash
 
 siteLoginList=( "test@example.com" "test@example2.com" )
+
+# there has got to be a better way to do this
 example_com='/var/www/htdocs'
 example2_com='/var/www/public_html'
 
 for siteLogin in "${siteLoginList[@]}" ; do
 	safeDomain=${siteLogin##*@} #remove all text before the @
-	safeDomain=$( echo ${safeDomain} | sed 's/[^a-zA-Z0-9_]/_/g'
+	safeDomain=$( echo ${safeDomain} | sed 's/[^a-zA-Z0-9_]/_/g')
 	magentoPath="${!safeDomain}"
-	dumpScript=`cat dumpMagentoDatabase.sh`
-	# or do this
-	#dumpScript=$(<dumpMagentoDatabase.sh)
-
-	ssh ${siteLogin} -t "magentoPath=${magentoPath} && ${dumpScript}"
-#	ssh ${siteLogin} -t "magentoPath=${magentoPath} && ${dumpScript}"
+	catScript=$(cat dumpMagentoDatabase.sh)
+	
+	#ssh ${siteLogin} "magentoPath=${magentoPath} && ${catScript}"
 
 	outputFolder="./databases/${safeDomain}"
+	
 	if [ ! -d "${outputFolder}" ] ; then
-		mkdir --parents ${outputFolder}
+		mkdir --p ${outputFolder}
 	fi
 	if [ ! -w "${outputFolder}" ] ; then
 		echo "${outputFolder} is not writable"
 		exit
 	fi
 
+	rm ${outputFolder}/*
 	rsync -ahz ${siteLogin}:/tmp/databases/* ${outputFolder}
 done
