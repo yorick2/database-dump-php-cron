@@ -1,7 +1,3 @@
-
-databaseRef='test'     ###### what should this be
-
-
 if [ -z "${truncateRewrites}" ]; then
 	truncateRewrites=true  ######### should this set to yes by default
 fi
@@ -13,14 +9,25 @@ if [ -z "${folderPath}" ]; then
 	folderPath='/tmp/databases'
 fi
 
+cd ${magentoPath}
+
+#get site url
+sqlQuery="select * from core_config_data where path = 'web/unsecure/base_url' and scope = 'default'"
+siteUrl=$(n98-magerun.phar db:query "")
+siteUrl=${siteUrl##*\:\/\/} #remove all text before the ://
+siteUrl=${siteUrl%\/} #remove trailing /
+
+dbName=$(n98-magerun.phar db:info dbname)
+databaseRef="${siteUrl}-dbName"
+
 date=`date +%Y-%m-%d`;
 filName="{databaseRef}-${date}.sql"
 filePath="${folderPath}/${fileName}"
 
 if [ "${truncateRewrites}"="true" ] ; then
-    $truncateTablesList = 'core_url_rewrite @development';
+    truncateTablesList = 'core_url_rewrite @development';
 else
-    $truncateTablesList = '@development';
+    truncateTablesList = '@development';
 fi
 
 if [ ! -d "${folderPath}" ] ; then
@@ -32,11 +39,10 @@ if [ ! -w "${folderPath}" ] ; then
 	exit
 fi
 
-if [ !(-a "${filePath}") ] ; then
-	if [ !(-e "${filePath}.lock") ] ; then
+if [ ! -a "${filePath}" ] ; then
+	if [ ! -e "${filePath}.lock" ] ; then
 		touch "${filePath}.lock" &&
 		rm "${folderPath}/${databaseRef}-*.tar.gz"
-		cd ${magentoPath}
 		/tmp/n98-magerun.phar db:dump --strip="$truncateTablesList" ${filePath} &&
 		tar -czf "${filePath}.tar.gz" --directory ${folderPath} $file &&
 		rm -f "${filePath}.lock" &&
