@@ -11,6 +11,24 @@ if [ -z ${folderPath} ]; then
 	folderPath='/tmp/databases'
 fi
 
+##### get web folder ####
+
+# if apache
+#if [ ]; then
+	apacheConfFile=$( grep 'ServerName.*l\.magento' /etc/apache2/sites-available/* )
+	apacheConfFile=${apacheConfFile%:*}
+	magentoPath=$(grep 'DocumentRoot' $apacheConfFile)
+	magentoPath="/${magentoPath##* /}"
+#fi
+
+
+
+
+#########################
+
+
+
+
 cd ${magentoPath}
 
 #get site url

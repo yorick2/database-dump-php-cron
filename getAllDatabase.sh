@@ -24,6 +24,8 @@ for siteLogin in "${siteLoginList[@]}" ; do
 		exit
 	fi
 
-	rm ${outputFolder}/*
+	if [ -d "${outputFolder}" ] ; then
+		rm ${outputFolder}/*
+	fi
 	rsync -ahz ${siteLogin}:/tmp/databases/* ${outputFolder}
 done
