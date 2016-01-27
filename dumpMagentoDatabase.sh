@@ -77,16 +77,40 @@ if [ ! -w "${folderPath}" ] ; then
 	exit
 fi
 
-if [ ! -a "${filePath}" ] ; then
+# magento db dump
+if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
 	if [ ! -e "${filePath}.lock" ] ; then
 		touch "${filePath}.lock" &&
-		rm "${folderPath}/${fileRef}*.tar.gz"
 		n98-magerun.phar db:dump --strip="$truncateTablesList" ${filePath} &&
-		tar -czf "${filePath%.sql}.tar.gz" --directory ${folderPath} ${fileName} &&
-		rm -f "${filePath}.lock" &&
+		tar -czf "${filePath%.sql}.tar.gz" --directory ${folderPath} ${fileName}
+		rm -f "${filePath}.lock"
 		rm ${filePath}
 	fi
 fi
+
+
+# wordpress db dump
+wordpressConfigFiles=$(ls -x ./*/wp-config.php)
+for configFile in $wordpressConfigFiles; do
+	if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
+		if [ ! -e "${filePath}.lock" ] ; then
+			wordpressFolder=${configFile%/*}
+			fileRef="${url}-${wordpressFolder}"
+			date=`date +%Y-%m-%d`
+			fileName="${fileRef}--${date}.sql"
+			filePath="${folderPath}/${fileName}"
+			dbName=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_NAME' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
+			dbUser=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_USER' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
+			dbPass=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_PASSWORD' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
+			dbHost=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_HOST' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
+			touch "${filePath}.lock" &&
+			mysqldump -h ${dbHost} -u${dbUser} -p${dbPass} ${dbName} > ${filePath} &&
+			tar -czf "${filePath%.sql}.tar.gz" --directory ${folderPath} ${fileName}
+			rm -f "${filePath}.lock" &&
+			rm ${filePath}
+		fi
+	fi
+done
 
 unset magentoPath
 unset folderPath

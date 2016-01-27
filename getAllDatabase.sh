@@ -36,7 +36,7 @@ for SEC in $_SECTIONS; do
 		mkdir --p ${outputFolder}
 	else
 		if [ "$(ls ${outputFolder})" ]; then
-			rm ${outputFolder}/${host}-magento*tar.gz
+			rm ${outputFolder}/${host}*tar.gz
 		fi
 	fi
 	if [ ! -w "${outputFolder}" ] ; then
