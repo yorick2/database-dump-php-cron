@@ -33,7 +33,7 @@ if [ -z ${magentoPath} ]; then
 	        fi
 	    fi
         if [ "${apacheConfFile}" != "" ]; then
-    		magentoPath=$( grep 'DocumentRoot' ${apacheConfFile} )
+    		magentoPath=$(  sed -e 's/[#].*$//' <  ${apacheConfFile} | grep 'DocumentRoot' )
         	magentoPath="${magentoPath##*DocumentRoot[[:space:]]}"
         fi
     # if nginx
@@ -41,7 +41,7 @@ if [ -z ${magentoPath} ]; then
     	if [ -d "/etc/nginx/sites-available" ] ; then
 	    	nginxConfFile=$( grep --files-with-matches "${url}" /etc/nginx/sites-available/* )
 	    	if [ "${nginxConfFile}" != "" ]; then
-	    		magentoPath=$( grep 'root ' ${nginxConfFile} )
+	    		magentoPath=$( sed -e 's/[#].*$//' <  ${nginxConfFile} | grep 'root ' )
 	        	magentoPath="${magentoPath##*root[[:space:]]}"
 	        	magentoPath="${magentoPath%%;*}"
 	        fi

@@ -2,7 +2,7 @@
 outputFolder="./databases"
 configFile="sites.ini";
 
-_SECTIONS=`cat ${configFile} | grep -o -P "\[([a-zA-Z0-9-]+)\]" | tr -d [] | sed ':a;N;$!ba;s/\n/ /g'`
+_SECTIONS=`cat ${configFile} | grep -o -P "\[([a-zA-Z0-9-._ ]+)\]" | tr -d [] | sed ':a;N;$!ba;s/\n/ /g'`
 
 ini_parser() {
     FILE=$1
@@ -24,9 +24,6 @@ for SEC in $_SECTIONS; do
 
 	siteLogin="${user}@${host}"
 
-	safeDomain=${siteLogin##*@} #remove all text before the @
-	safeDomain=$( echo ${safeDomain} | sed 's/[^a-zA-Z0-9_]/_/g' )
-	#magentoPath="${!safeDomain}" ## useful to know this cmd
 	catScript=$(cat dumpMagentoDatabase.sh)
 	
 	if [ -z ${docRoot} ] ; then
