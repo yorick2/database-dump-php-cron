@@ -1,41 +1,44 @@
 #!/usr/bin/env bash
 
-eval USERDIR=~$(whoami); # get user folder location
+eval userDir=~$(whoami); # get user folder location
+magentoPath="${magentoPath/\~/${userDir}}"
+
 if [ -z ${truncateRewrites} ]; then
 	truncateRewrites=true  ######### should this set to yes by default
-fi
-if [ -z ${magentoPath} ]; then
-	magentoPath="${userDir}/public_html"
 fi
 if [ -z ${folderPath} ]; then
 	folderPath='/tmp/databases'
 fi
 
 ##### get web folder ####
-
-# if apache
-#if [ ]; then
-	apacheConfFile=$( grep 'ServerName.*l\.magento' /etc/apache2/sites-available/* )
-	apacheConfFile=${apacheConfFile%:*}
-	magentoPath=$(grep 'DocumentRoot' $apacheConfFile)
-	magentoPath="/${magentoPath##* /}"
-#fi
+# problem is need url to get folder to get url????
+# could pass the url to this script
 
 
+if [ -z ${magentoPath} ]; then
+    isNginx=$(top -b -n 1|grep nginx)
+    isApache=$(top -b -n 1|grep apache)
+    # if apache
+    if [ "${isApache}" != "" ]; then
+        apacheConfFile=$( grep --files-with-matches 'ServerName.*${url}' /etc/apache2/sites-available/* )
+        if [ "${apacheConfFile}" = "" ] ; then
+            apacheConfFile=$( grep --files-with-matches 'ServerName.*${url}' /etc/apache2/extra/* )
+        fi
+        magentoPath=$( grep 'DocumentRoot' ${apacheConfFile} )
+        magentoPath="/${magentoPath##* /}"
+    # if nginx
+    elif [ "${isNginx}" != "" ] ; then
+        nginxConfFile=$( grep --files-with-matches '${url}' /etc/nginx/sites-available/* )
+        magentoPath=$( grep 'root' ${nginxConfFile} )
+        magentoPath="/${magentoPath##*root /}"
+    else
 
+    fi
+fi
 
 #########################
 
-
-
-
 cd ${magentoPath}
-
-#get site url
-sqlQuery="select * from core_config_data where path = 'web/unsecure/base_url' and scope = 'default'"
-siteUrl=$(n98-magerun.phar db:query "${sqlQuery}")
-siteUrl=${siteUrl##*\:\/\/} #remove all text before the ://
-siteUrl=${siteUrl%\/} #remove trailing /
 
 dbName=$(n98-magerun.phar db:info dbname)
 databaseRef="${siteUrl}-${dbName}"

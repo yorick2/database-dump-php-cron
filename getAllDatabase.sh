@@ -1,18 +1,35 @@
 #!/bin/bash
 
-siteLoginList=( "test@example.com" "test@example2.com" )
+CONFIGFILE="example.ini";
 
-# there has got to be a better way to do this
-example_com='/var/www/htdocs'
-example2_com='/var/www/public_html'
+_SECTIONS=`cat ${CONFIGFILE} | grep -o -P "\[([a-zA-Z0-9-]+)\]" | tr -d [] | sed ':a;N;$!ba;s/\n/ /g'`
 
-for siteLogin in "${siteLoginList[@]}" ; do
+ini_parser() {
+ FILE=$1
+ SECTION=$2
+ eval $(sed -e 's/[[:space:]]*\=[[:space:]]*/=/g' \
+ -e 's/[;#].*$//' \
+ -e 's/[[:space:]]*$//' \
+ -e 's/^[[:space:]]*//' \
+ -e "s/^\(.*\)=\([^\"']*\)$/\1=\"\2\"/" \
+ < $FILE \
+ | sed -n -e "/^\[$SECTION\]/I,/^\s*\[/{/^[^;].*\=.*/p;}")
+}
+
+
+# A sections array that we'll loop through
+for SEC in $_SECTIONS; do
+    # get info from ini file
+    ini_parser ${CONFIGFILE} ${SEC};
+
+	siteLogin="${user}@${host}"
+
 	safeDomain=${siteLogin##*@} #remove all text before the @
 	safeDomain=$( echo ${safeDomain} | sed 's/[^a-zA-Z0-9_]/_/g')
 	magentoPath="${!safeDomain}"
 	catScript=$(cat dumpMagentoDatabase.sh)
 	
-	#ssh ${siteLogin} "magentoPath=${magentoPath} && ${catScript}"
+	ssh ${siteLogin} "magentoPath=${DocumentRoot} && ${catScript}"
 
 	outputFolder="./databases/${safeDomain}"
 	
