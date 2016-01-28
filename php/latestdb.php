@@ -48,7 +48,7 @@ if ( !file_exists($tmpfname . '.lock') ) {
             . ' && rm ' . $tmpfname
             . '  ) &';
 
-    exec($command);
+    exec($command);   
 }
 
 for($i=0 ; $i<30 ; $i++){
