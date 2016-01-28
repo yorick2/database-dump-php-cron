@@ -41,7 +41,7 @@ if [ -z ${magentoPath} ]; then
     	if [ -d "/etc/nginx/sites-available" ] ; then
 	    	nginxConfFile=$( grep --files-with-matches "${url}" /etc/nginx/sites-available/* )
 	    	if [ "${nginxConfFile}" != "" ]; then
-	    		magentoPath=$( sed -e 's/[#].*$//' <  ${nginxConfFile} | grep 'root ' )
+	    		magentoPath=$( sed -e 's/[#].*$//' <  ${nginxConfFile} | grep 'root ' | head -n 1 )
 	        	magentoPath="${magentoPath##*root[[:space:]]}"
 	        	magentoPath="${magentoPath%%;*}"
 	        fi
@@ -57,6 +57,7 @@ eval userDir=~$(whoami); # get user folder location
 magentoPath="${magentoPath/\~/${userDir}}"
 cd ${magentoPath}
 
+#### magento db dump ####
 fileRef="${url}-magento"
 date=`date +%Y-%m-%d`;
 fileName="${fileRef}--${date}.sql"
@@ -77,7 +78,6 @@ if [ ! -w "${folderPath}" ] ; then
 	exit
 fi
 
-# magento db dump
 if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
 	if [ ! -e "${filePath}.lock" ] ; then
 		touch "${filePath}.lock" &&
@@ -89,16 +89,16 @@ if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
 fi
 
 
-# wordpress db dump
+#### wordpress db dump ####
 wordpressConfigFiles=$(ls -x ./*/wp-config.php)
 for configFile in $wordpressConfigFiles; do
+    wordpressFolder=$( echo "${configFile%/*}" | sed s/^[[:space:]]*[./]*// )
+    fileRef="${url}-${wordpressFolder}"
+    date=`date +%Y-%m-%d`
+    fileName="${fileRef}--${date}.sql"
+    filePath="${folderPath}/${fileName}"
 	if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
 		if [ ! -e "${filePath}.lock" ] ; then
-			wordpressFolder=${configFile%/*}
-			fileRef="${url}-${wordpressFolder}"
-			date=`date +%Y-%m-%d`
-			fileName="${fileRef}--${date}.sql"
-			filePath="${folderPath}/${fileName}"
 			dbName=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_NAME' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
 			dbUser=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_USER' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
 			dbPass=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_PASSWORD' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )

@@ -2,6 +2,16 @@
 outputFolder="./databases"
 configFile="sites.ini";
 
+if [ ! -e "${configFile}" ] ; then
+    echo "${configFile} config file dosnt exist";
+    exit;
+else
+    if [ ! -r "${configFile}" ] ; then
+        echo "${configFile} config file isnt readable";
+        exit;
+    fi
+fi
+
 _SECTIONS=`cat ${configFile} | grep -o -P "\[([a-zA-Z0-9-._ ]+)\]" | tr -d [] | sed ':a;N;$!ba;s/\n/ /g'`
 
 ini_parser() {
@@ -19,13 +29,14 @@ ini_parser() {
 
 # A sections array that we'll loop through
 for SEC in $_SECTIONS; do
+    echo [${SEC}]
     # get info from ini file
     ini_parser ${configFile} ${SEC};
 
 	siteLogin="${user}@${host}"
 
 	catScript=$(cat dumpMagentoDatabase.sh)
-	
+
 	if [ -z ${docRoot} ] ; then
 		ssh ${siteLogin} "url=${host} && ${catScript}"
 	else
@@ -43,5 +54,6 @@ for SEC in $_SECTIONS; do
 		echo "${outputFolder} is not writable"
 		exit
 	fi
+	echo downloading
 	rsync -ahz ${siteLogin}:/tmp/databases/* ${outputFolder}
 done
