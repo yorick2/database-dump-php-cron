@@ -2,6 +2,8 @@
 outputFolder="./databases"
 configFile="sites.ini";
 
+errors=''
+
 if [ ! -e "${configFile}" ] ; then
     echo "${configFile} config file dosnt exist";
     exit;
@@ -37,23 +39,32 @@ for SEC in $_SECTIONS; do
 
 	catScript=$(cat dumpMagentoDatabase.sh)
 
+    echo 'creating databases'
 	if [ -z ${docRoot} ] ; then
-		ssh ${siteLogin} "url=${host} && ${catScript}"
+		sshReply=$( ssh ${siteLogin} "url=${host} && ${catScript}" )
 	else
-		ssh ${siteLogin} "url=${host} && magentoPath=${docRoot} && ${catScript}"
+		sshReply=$( ssh ${siteLogin} "url=${host} && magentoPath=${docRoot} && ${catScript}" )
 		unset docRoot
 	fi
-	if [ ! -d "${outputFolder}" ] ; then
-		mkdir --p ${outputFolder}
-	else
-		if [ "$(ls ${outputFolder})" ]; then
-			rm ${outputFolder}/${host}*tar.gz
-		fi
-	fi
-	if [ ! -w "${outputFolder}" ] ; then
-		echo "${outputFolder} is not writable"
-		exit
-	fi
-	echo downloading
-	rsync -ahz ${siteLogin}:/tmp/databases/* ${outputFolder}
+
+	sshReplyLastLine=$( echo "${sshReply}" | sed -e '$!d')
+    if [ "$sshReplyLastLine" = "Finished" ] ; then
+        if [ ! -d "${outputFolder}" ] ; then
+            mkdir --p ${outputFolder}
+        else
+            if [ "$(ls ${outputFolder})" ]; then
+                rm ${outputFolder}/${host}*tar.gz
+            fi
+        fi
+        if [ ! -w "${outputFolder}" ] ; then
+            echo "${outputFolder} is not writable"
+            exit
+        fi
+        echo downloading
+        rsync -ahz ${siteLogin}:/tmp/databases/* ${outputFolder}
+    else
+        errors="${errors}\n${url}: ${sshReplyLastLine}"
+    fi
 done
+
+printf "${errors}" > dbDumpErrors.log
