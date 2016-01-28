@@ -1,3 +1,4 @@
 /nbproject
-/databases
-/sites.ini
+/bash/databases
+/bash/sites.ini
+php/databases
