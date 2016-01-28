@@ -3,13 +3,20 @@ if [ -z ${url} ] ; then
 	if [ ! -z $1 ] ; then
 		echo 'missing variables:'
 		echo 'bash dumpMagentoDatabase.sh <<<url>>> or bash dumpMagentoDatabase.sh <<<url>>> <<<magentoFolder>>>>'
+		echo "\nto check if web root can be found run:"
+		echo 'bash dumpMagentoDatabase.sh <<<url>>> --siteRootTest'
 		exit;
 	else
 		url=$1
 	fi
 fi
+
 if [ ! -z $2 ] ; then
-	magentoPath=$2
+    if [ "$2" = "--siteRootTest"  ] ; then
+        siteRootTest=true
+    else
+	    magentoPath=$2
+    fi
 fi
 
 if [ -z ${siteRootTest} ] ; then
@@ -94,7 +101,6 @@ if [ "${siteRootTest}" != "true" ] ; then
             rm ${filePath}
         fi
     fi
-
 
     #### wordpress db dump ####
     wordpressConfigFiles=$(ls -x ./*/wp-config.php)
