@@ -1,4 +1,4 @@
-# database-dump-php-cron
+# muliple-external-magento-database-download
 
 ##bash
 Bash will fetch a magento database from a group of your dev sites automatically removing old ones, so it can be fired nightly by a cron. Also for each site it will detect Wordpress sites directly in folders inside the magento website root (e.g. htdocs/blog)
