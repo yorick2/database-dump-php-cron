@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 if [ -z ${url} ] ; then
-	if [ ! -z $1 ] ; then
+	if [ -z "$1" ] ; then
 		echo 'missing variables:'
 		echo 'bash dumpMagentoDatabase.sh <<<url>>> or bash dumpMagentoDatabase.sh <<<url>>> <<<magentoFolder>>>>'
 		echo "\nto check if web root can be found run:"
@@ -11,7 +11,7 @@ if [ -z ${url} ] ; then
 	fi
 fi
 
-if [ ! -z $2 ] ; then
+if [ ! -z "$2" ] ; then
     if [ "$2" = "--siteRootTest"  ] ; then
         siteRootTest=true
     else
