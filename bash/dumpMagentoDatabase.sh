@@ -2,20 +2,29 @@
 if [ -z ${url} ] ; then
 	if [ -z "$1" ] ; then
 		echo 'missing variables:'
-		echo 'bash dumpMagentoDatabase.sh <<<url>>> or bash dumpMagentoDatabase.sh <<<url>>> <<<magentoFolder>>>>'
-		echo "\nto check if web root can be found run:"
+		echo 'bash dumpMagentoDatabase.sh <<<url>>>'
+        echo 'or bash dumpMagentoDatabase.sh <<<url>>> <<<outputFolder>>>>'
+        echo 'or bash dumpMagentoDatabase.sh <<<url>>> <<<outputFolder>>>> <<<magentoFolder>>>>'
+		echo
+        echo 'to check if web root can be found run:'
 		echo 'bash dumpMagentoDatabase.sh <<<url>>> --siteRootTest'
+        echo
 		exit;
 	else
 		url=$1
 	fi
 fi
 
-if [ ! -z "$2" ] ; then
-    if [ "$2" = "--siteRootTest"  ] ; then
-        siteRootTest=true
-    else
-	    magentoPath=$2
+if [ "$2" = "--siteRootTest"  ] ; then
+    siteRootTest=true
+else
+    if [ -z ${folderPath} ]; then
+        if [ -z "$2" ] ; then
+            folderPath='/tmp/databases'
+            useStandardOutputFolder='true'
+        else
+            folderPath="$2"
+        fi
     fi
 fi
 
@@ -26,8 +35,9 @@ fi
 if [ -z ${truncateRewrites} ]; then
 	truncateRewrites=true  ######### should this set to yes by default
 fi
-if [ -z ${folderPath} ]; then
-	folderPath='/tmp/databases'
+
+if [ ! -z "$3" ] ; then
+        magentoPath=$3
 fi
 
 ##### get web folder ####
@@ -35,7 +45,7 @@ if [ -z ${magentoPath} ]; then
     isNginx=$(top -b -n 1|grep nginx)
     isApache=$(top -b -n 1|grep apache)
     # if apache
-    if [ "${isApache}" != "" ]; then
+    if [ ! -z "${isApache}" ]; then
         if [ -d "/etc/apache2/sites-available" ] ; then
 			apacheConfFile=$( grep --files-with-matches "ServerName.*${url}" /etc/apache2/sites-available/* )
         else
@@ -43,22 +53,25 @@ if [ -z ${magentoPath} ]; then
 			    apacheConfFile=$( grep --files-with-matches "ServerName.*${url}" /etc/apache2/extra/* )
 	        fi
 	    fi
-        if [ "${apacheConfFile}" != "" ]; then
+        if [ ! -z "${apacheConfFile}" ]; then
     		magentoPath=$(  sed -e 's/[#].*$//' <  ${apacheConfFile} | grep 'DocumentRoot' )
         	magentoPath="${magentoPath##*DocumentRoot[[:space:]]}"
         fi
     # if nginx
-    elif [ "${isNginx}" != "" ] ; then
+    elif [ ! -z "${isNginx}" ] ; then
     	if [ -d "/etc/nginx/sites-available" ] ; then
 	    	nginxConfFile=$( grep --files-with-matches "${url}" /etc/nginx/sites-available/* )
-	    	if [ "${nginxConfFile}" != "" ]; then
-	    		magentoPath=$( sed -e 's/[#].*$//' <  ${nginxConfFile} | grep 'root ' | head -n 1 )
-	        	magentoPath="${magentoPath##*root[[:space:]]}"
-	        	magentoPath="${magentoPath%%;*}"
+	    	echo "---$nginxConfFile---"
+    		if [ "${#nginxConfFile[@]}" = "1" ] ; then # check if desired no of files
+    			if [ ! -z "${nginxConfFile}" ]; then
+    	    			magentoPath=$( sed -e 's/[#].*$//' <  ${nginxConfFile} | grep 'root ' | head -n 1 )
+    		        	magentoPath="${magentoPath##*root[[:space:]]}"
+    		        	magentoPath="${magentoPath%%;*}"
+    			fi
 	        fi
 	    fi
     fi
-    if [ "${magentoPath}" = "" ] ; then
+    if [ -z "${magentoPath}" ] ; then
     	echo 'Document root not set';
     	exit;
     else
@@ -84,7 +97,9 @@ if [ "${siteRootTest}" != "true" ] ; then
     fi
 
     if [ ! -d "${folderPath}" ] ; then
-        mkdir -p "${folderPath}"
+        if [ "$useStandardOutputFolder" = "true" ] ; then
+            mkdir -p "${folderPath}"
+        fi
     fi
 
     if [ ! -w "${folderPath}" ] ; then
