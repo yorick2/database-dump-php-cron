@@ -47,40 +47,54 @@ if [ -z ${magentoPath} ]; then
     # if apache
     if [ ! -z "${isApache}" ]; then
         if [ -d "/etc/apache2/sites-available" ] ; then
-			apacheConfFile=$( grep --files-with-matches "ServerName[[:space:]]*${url}[|[:space:]]" /etc/apache2/sites-available/* )
+			apacheConfFile=$( grep --files-with-matches "ServerName[[:space:]]*${url}[|[:space:]]" /etc/apache2/sites-enabled/* )
         else
 	        if [ -d "/etc/apache2/etc" ] ; then
 			    apacheConfFile=$( grep --files-with-matches "ServerName[[:space:]]*${url}[|[:space:]]" /etc/apache2/extra/* )
 	        fi
 	    fi
 	    echo "using this conf file: ${apacheConfFile}"
-        if [ ! -z "${apacheConfFile}" ]; then
-			  string=$(cat ${apacheConfFile})
-			  # add ; to EOL and put into single line
-			  string=$( echo "${string}" | sed -e 's/$/;/g' | sed ':a;N;$!ba;s/\n//g' );
-			  # define space short hand for later user
-			  sp='[:space:]'
-			  s='[[:space:]]'
-			  # add spaces to allow patern matching of space separeted sections
-			  delimter='<${s}*VirtualHost${s}*\*:80${s}*>'
-			  string=$( echo "${string}" | sed "s/${delimter}//g" );
-			  delimter='<${s}*\/${s}*VirtualHost${s}*>'
-			  string=$( echo "${string}" | sed -e "s/${delimter}/|/g" );
-			  # return section that has our server info
-			  string=$(echo "${string}" | grep -oe "[^|]*ServerName[${sp};][${sp};]*${url}[${sp};][${sp};]*[^|]*")
-			  # retrun the folderloaction
-			  magentoPath=$(echo "${string}" | grep -oe "DocumentRoot${s}*[^${sp};]*" | sed -e "s/^DocumentRoot['${sp}]*//g" | sed -e "s/['${sp}]*$//g") # | sed -e 's/"*//g' )
-        fi
+        if [ "${#apacheConfFile[@]}" = "1" ] ; then # check if desired no of files
+	    	if [ ! -z "${apacheConfFile}" ]; then  # line neededto check not empty array of length 1
+				  string=$( sed -e 's/[#].*$//' < ${apacheConfFile})
+				  # add ; to EOL and put into single line
+				  string=$( echo "${string}" | sed -e 's/$/;/g' | sed ':a;N;$!ba;s/\n//g' );
+				  # define space short hand for later user
+				  sp='[:space:]'
+				  s='[[:space:]]'
+				  # add |'s to allow patern matching of | separeted sections
+				  delimter='<${s}*VirtualHost${s}*\*:80${s}*>'
+				  string=$( echo "${string}" | sed "s/${delimter}//g" );
+				  delimter='<${s}*\/${s}*VirtualHost${s}*>'
+				  string=$( echo "${string}" | sed -e "s/${delimter}/|/g" );
+				  # return section that has our server info
+				  string=$(echo "${string}" | grep -oe "[^|]*[${sp};]ServerName[${sp};][${sp};]*${url}[${sp};][^|]*")
+				  # return the folderloaction
+				  magentoPath=$(echo "${string}" | grep -oe "[${sp};]DocumentRoot${s}${s}*[^;]*" | sed -e "s/^[${sp};]*DocumentRoot['${sp}]*//g" | sed -e "s/['${sp}]*$//g") # | sed -e 's/"*//g' )
+	        fi
+		fi
     # if nginx
     elif [ ! -z "${isNginx}" ] ; then
     	if [ -d "/etc/nginx/sites-available" ] ; then
-	    	nginxConfFile=$( grep --files-with-matches "${url}" /etc/nginx/sites-available/* )
-	   		echo "using this conf file: $nginxConfFile"
+    		sp='[:space:]'
+			s='[[:space:]]'
+	    	nginxConfFile=$( grep --files-with-matches "server_name${s}${s}*${url}[${sp};]" ./etc/nginx/sites-enabled/* )
+	   		echo "using this conf file: ${nginxConfFile}"
     		if [ "${#nginxConfFile[@]}" = "1" ] ; then # check if desired no of files
-    			if [ ! -z "${nginxConfFile}" ]; then
-    	    			magentoPath=$( sed -e 's/[#].*$//' <  ${nginxConfFile} | grep 'root ' | head -n 1 )
-    		        	magentoPath="${magentoPath##*root[[:space:]]}"
-    		        	magentoPath="${magentoPath%%;*}"
+    			if [ ! -z "${nginxConfFile}" ]; then # line neededto check not empty array of length 1
+				  string=$( sed -e 's/[#].*$//' < ${nginxConfFile} )
+				  # add ; to EOL and put into single line
+				  string=$( echo "${string}" | sed -e 's/$/;/g' | sed ':a;N;$!ba;s/\n//g' );
+				  # define space short hand for later user
+				  sp='[:space:]'
+				  s='[[:space:]]'
+				  # add |'s to allow patern matching of | separeted sections
+				  delimter=";${s}*server${s}${s}*{"
+				  string=$( echo "${string}" | sed -e "s/${delimter}/|/g" );
+				  # return section that has our server info
+				  string=$(echo "${string}" | grep -oe "[^|]*[${sp};]server_name${s}${s}*${url}[${sp};][^|]*")
+				  # return the folderloaction
+				  magentoPath=$(echo "${string}" | sed -e "s/{[^}]*}//g" | grep -oe "[${sp};]root${s}${s}*[^;]*" | sed -e "s/^[${sp};]*root[${sp}]*//g" | sed -e "s/[${sp}]*$//g" ) # | sed -e 's/"*//g'| sed -e "s/'*//g" )
     			fi
 	        fi
 	    fi
