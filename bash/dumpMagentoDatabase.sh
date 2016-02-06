@@ -37,13 +37,15 @@ if [ -z ${truncateRewrites} ]; then
 fi
 
 if [ ! -z "$3" ] ; then
-        magentoPath=$3
+    magentoPath=$3
 fi
 
 ##### get web folder ####
 if [ -z ${magentoPath} ]; then
     isNginx=$(top -b -n 1|grep nginx)
     isApache=$(top -b -n 1|grep apache)
+    isApache='' #deleteme
+    isNginx='true' # deleteme
     # if apache
     if [ ! -z "${isApache}" ]; then
         if [ -d "/etc/apache2/sites-available" ] ; then
@@ -75,11 +77,18 @@ if [ -z ${magentoPath} ]; then
 		fi
     # if nginx
     elif [ ! -z "${isNginx}" ] ; then
-    	if [ -d "/etc/nginx/sites-available" ] ; then
+    	# if [ -d "/etc/nginx/sites-available" ] ; then
     		sp='[:space:]'
 			s='[[:space:]]'
-	    	nginxConfFile=$( grep --files-with-matches "server_name${s}${s}*${url}[${sp};]" ./etc/nginx/sites-enabled/* )
-	   		echo "using this conf file: ${nginxConfFile}"
+			numFiles=(/etc/nginx/sites-enabled/*);
+			numFiles=${#numFiles[@]};
+			if [ "${numFiles}"="1" ] ; then
+		    	nginxConfSingleFile=(/etc/nginx/sites-enabled/*)
+   	    		echo "trying this nginx config file: ${nginxConfSingleFile[@]}"
+		    else
+		    	nginxConfFile=$( grep --files-with-matches "server_name${s}${s}*${url}[${sp};]" /etc/nginx/sites-enabled/* )
+	   			echo "using this nginx conf file: ${nginxConfFile}"
+			fi
     		if [ "${#nginxConfFile[@]}" = "1" ] ; then # check if desired no of files
     			if [ ! -z "${nginxConfFile}" ]; then # line neededto check not empty array of length 1
 				  string=$( sed -e 's/[#].*$//' < ${nginxConfFile} )
@@ -93,11 +102,34 @@ if [ -z ${magentoPath} ]; then
 				  string=$( echo "${string}" | sed -e "s/${delimter}/|/g" );
 				  # return section that has our server info
 				  string=$(echo "${string}" | grep -oe "[^|]*[${sp};]server_name${s}${s}*${url}[${sp};][^|]*")
-				  # return the folderloaction
-				  magentoPath=$(echo "${string}" | sed -e "s/{[^}]*}//g" | grep -oe "[${sp};]root${s}${s}*[^;]*" | sed -e "s/^[${sp};]*root[${sp}]*//g" | sed -e "s/[${sp}]*$//g" ) # | sed -e 's/"*//g'| sed -e "s/'*//g" )
-    			fi
+				  # return the folder location
+				  magentoPath=$(echo "${string}" | sed -e "s/{[^}]*}//g" | grep -oe "[${sp};]root${s}${s}*[^;]*" | sed -e "s/^[${sp};]*root${s}*//g" | sed -e "s/[${sp}]*$//g" ) # | sed -e 's/"*//g'| sed -e "s/'*//g" )
+				fi
 	        fi
-	    fi
+    		if [ "${#nginxConfSingleFile[@]}" = "1" ] ; then # check if desired no of files
+    			if [ ! -z "${nginxConfSingleFile}" ] ; then # line neededto check not empty array of length 1
+		    	    # define space short hand for later user
+					sp='[:space:]'
+					s='[[:space:]]'
+		    	    # remove comments
+		    	    string=$( sed -e 's/[#].*$//' <  ${nginxConfSingleFile} )
+		    	    # line setting server name
+		    	    hostsSetInFile=$( echo "${string}" | grep "^${s}*server_name${s}" )
+		    	    echo "--$hostsSetInFile--"
+		    	    # if file dosnt set a server name then safe to assume its our file
+		    	    if [ -z "$hostsSetInFile" ] ; then
+		    	    	# add ; to EOL and put into single line
+				  		string=$( echo "${string}" | sed -e 's/$/;/g' | sed ':a;N;$!ba;s/\n//g' );
+						# add |'s to allow patern matching of | separeted sections
+						delimter=";${s}*server${s}${s}*{"
+						string=$( echo "${string}" | sed -e "s/${delimter}/|/g" );
+						# # return section that has our server info
+						# return the folder location
+						magentoPath=$(echo "${string}" | sed -e "s/{[^}]*}//g" | grep -oe "[${sp};]root${s}${s}*[^;]*" | sed -e "s/^[${sp};]*root${s}*//g" | sed -e "s/[${sp}]*$//g" )
+					fi
+    			fi
+    		fi
+	    # fi
     fi
     if [ -z "${magentoPath}" ] ; then
     	echo 'Document root not set';
