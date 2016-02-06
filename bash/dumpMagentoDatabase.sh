@@ -44,8 +44,8 @@ fi
 if [ -z ${magentoPath} ]; then
     isNginx=$(top -b -n 1|grep nginx)
     isApache=$(top -b -n 1|grep apache)
-    isApache='' #deleteme
-    isNginx='true' # deleteme
+    # isApache='' #deleteme
+    # isNginx='true' # deleteme
     # if apache
     if [ ! -z "${isApache}" ]; then
         if [ -d "/etc/apache2/sites-available" ] ; then
