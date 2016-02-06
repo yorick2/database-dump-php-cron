@@ -80,15 +80,8 @@ if [ -z ${magentoPath} ]; then
     	# if [ -d "/etc/nginx/sites-available" ] ; then
     		sp='[:space:]'
 			s='[[:space:]]'
-			numFiles=(/etc/nginx/sites-enabled/*);
-			numFiles=${#numFiles[@]};
-			if [ "${numFiles}"="1" ] ; then
-		    	nginxConfSingleFile=(/etc/nginx/sites-enabled/*)
-   	    		echo "trying this nginx config file: ${nginxConfSingleFile[@]}"
-		    else
-		    	nginxConfFile=$( grep --files-with-matches "server_name${s}${s}*${url}[${sp};]" /etc/nginx/sites-enabled/* )
-	   			echo "using this nginx conf file: ${nginxConfFile}"
-			fi
+			nginxConfFile=$( grep --files-with-matches "server_name${s}${s}*${url}[${sp};]" /etc/nginx/sites-enabled/* )
+	   		echo "using this nginx conf file: ${nginxConfFile}"
     		if [ "${#nginxConfFile[@]}" = "1" ] ; then # check if desired no of files
     			if [ ! -z "${nginxConfFile}" ]; then # line neededto check not empty array of length 1
 				  string=$( sed -e 's/[#].*$//' < ${nginxConfFile} )
@@ -105,6 +98,13 @@ if [ -z ${magentoPath} ]; then
 				  # return the folder location
 				  magentoPath=$(echo "${string}" | sed -e "s/{[^}]*}//g" | grep -oe "[${sp};]root${s}${s}*[^;]*" | sed -e "s/^[${sp};]*root${s}*//g" | sed -e "s/[${sp}]*$//g" ) # | sed -e 's/"*//g'| sed -e "s/'*//g" )
 				fi
+			else
+				numFiles=(/etc/nginx/sites-enabled/*);
+				numFiles=${#numFiles[@]};
+				if [ "${numFiles}"="1" ] ; then
+			    	nginxConfSingleFile=(/etc/nginx/sites-enabled/*)
+	   	    		echo "trying this nginx config file: ${nginxConfSingleFile[@]}"
+			    fi
 	        fi
     		if [ "${#nginxConfSingleFile[@]}" = "1" ] ; then # check if desired no of files
     			if [ ! -z "${nginxConfSingleFile}" ] ; then # line neededto check not empty array of length 1
@@ -113,9 +113,8 @@ if [ -z ${magentoPath} ]; then
 					s='[[:space:]]'
 		    	    # remove comments
 		    	    string=$( sed -e 's/[#].*$//' <  ${nginxConfSingleFile} )
-		    	    # line setting server name
+		    	    # find lines setting server name
 		    	    hostsSetInFile=$( echo "${string}" | grep "^${s}*server_name${s}" )
-		    	    echo "--$hostsSetInFile--"
 		    	    # if file dosnt set a server name then safe to assume its our file
 		    	    if [ -z "$hostsSetInFile" ] ; then
 		    	    	# add ; to EOL and put into single line
