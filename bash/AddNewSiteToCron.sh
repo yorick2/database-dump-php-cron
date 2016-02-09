@@ -3,7 +3,12 @@ outputFolder="./databases"
 configFile="sites.ini";
 
 echo "site url?"
-read host
+read url
+greppedUrl=$(grep "^[[:space:]]*host[[:space:]][[:space:]]*=[[:space:]][[:space:]]*${url}[[:space:]]*$" < ${configFile})
+if [ ! -z "${greppedUrl}" ] ; then
+    echo "url already used"
+    exit
+fi
 echo "ssh user?"
 read user
 echo "site name"
@@ -30,9 +35,10 @@ fi
 
 echo "test download? (y/n)"
 read testDownload
-if [ ${testDownload} ] ; then
-    sshReply=ssh ${siteLogin} "url=${host} && ${catScript}"
+if [ "${testDownload}" = "y" ] ; then
+    sshReply=$(ssh ${siteLogin} "url=${host} && ${catScript}")
     sshReplyLastLine=$( echo "${sshReply}" | sed -e '$!d')
+
     if [ "$sshReplyLastLine" = "Finished" ] ; then
         if [ ! -d "${outputFolder}" ] ; then
             mkdir --p ${outputFolder}
@@ -47,15 +53,18 @@ if [ ${testDownload} ] ; then
         fi
         echo downloading
         rsyncReply=$(rsync -ahz ${siteLogin}:/tmp/databases/* ${outputFolder})
-        if [] ; then  ##### <<<<<<------ needs work
-            echo "[${url}]" >> ${configFile}
-            echo "user = ${user}" >> ${configFile}
-            echo "host = ${url}" >> ${configFile}
-
-#            "docRoot = ~/public_html"
-
-        fi
+        echo ${rsyncReply}
+        # if [] ; then  ##### <<<<<<------ needs work
+        #     echo "[${url}]" >> ${configFile}
+        #     echo "user = ${user}" >> ${configFile}
+        #     echo "host = ${url}" >> ${configFile}
+        # fi
     else
         errors="${errors}\n${url}: ${sshReplyLastLine}"
+        echo $errors
     fi
+else
+    echo "[${url}]" >> ${configFile}
+    echo "user = ${user}" >> ${configFile}
+    echo "host = ${url}" >> ${configFile}
 fi

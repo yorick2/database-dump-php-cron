@@ -232,3 +232,5 @@ fi
 
 unset magentoPath
 unset folderPath
+
+echo 'Finished'
