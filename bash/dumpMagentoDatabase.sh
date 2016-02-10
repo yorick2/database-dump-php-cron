@@ -21,7 +21,6 @@ else
     if [ -z ${folderPath} ]; then
         if [ -z "$2" ] ; then
             folderPath='/tmp/databases'
-            useStandardOutputFolder='true'
         else
             folderPath="$2"
         fi
@@ -186,14 +185,15 @@ if [ "${siteRootTest}" != "true" ] ; then
     fi
 
     if [ ! -d "${folderPath}" ] ; then
-        if [ "$useStandardOutputFolder" = "true" ] ; then
             mkdir -p "${folderPath}"
-        fi
     fi
 
     if [ ! -w "${folderPath}" ] ; then
         echo "${folderPath} is not writable"
         exit
+    else
+        # Unfortunately, test -f doesn't support multiple file
+        for i in "${folderPath}/*.tar.gz" ; do test -f "$i" && rm "${folderPath}/*.tar.gz" && break ; done # Unfortunately, test -f doesn't support multiple file
     fi
 
     if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
@@ -207,27 +207,32 @@ if [ "${siteRootTest}" != "true" ] ; then
     fi
 
     #### wordpress db dump ####
-    wordpressConfigFiles=$(ls -x ./*/wp-config.php)
-    for configFile in $wordpressConfigFiles; do
-        wordpressFolder=$( echo "${configFile%/*}" | sed s/^[[:space:]]*[./]*// )
-        fileRef="${url}-${wordpressFolder}"
-        date=`date +%Y-%m-%d`
-        fileName="${fileRef}--${date}.sql"
-        filePath="${folderPath}/${fileName}"
-        if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
-            if [ ! -e "${filePath}.lock" ] ; then
-                dbName=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_NAME' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
-                dbUser=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_USER' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
-                dbPass=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_PASSWORD' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
-                dbHost=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_HOST' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
-                touch "${filePath}.lock" &&
-                mysqldump -h ${dbHost} -u${dbUser} -p${dbPass} ${dbName} > ${filePath} &&
-                tar -czf "${filePath%.sql}.tar.gz" --directory ${folderPath} ${fileName}
-                rm -f "${filePath}.lock" &&
-                rm ${filePath}
+    hasWordpress="false"
+    # Unfortunately, test -f doesn't support multiple file
+    for i in "${folderPath}/*.tar.gz" ; do test -f "$i" && hasWordpress="true" && break ; done # Unfortunately, test -f doesn't support multiple file
+    if [ "${hasWordpress}" = "true" ] ; then
+        wordpressConfigFiles=$(ls -x ./*/wp-config.php)
+        for configFile in $wordpressConfigFiles; do
+            wordpressFolder=$( echo "${configFile%/*}" | sed s/^[[:space:]]*[./]*// )
+            fileRef="${url}-${wordpressFolder}"
+            date=`date +%Y-%m-%d`
+            fileName="${fileRef}--${date}.sql"
+            filePath="${folderPath}/${fileName}"
+            if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
+                if [ ! -e "${filePath}.lock" ] ; then
+                    dbName=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_NAME' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
+                    dbUser=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_USER' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
+                    dbPass=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_PASSWORD' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
+                    dbHost=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_HOST' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
+                    touch "${filePath}.lock" &&
+                    mysqldump -h ${dbHost} -u${dbUser} -p${dbPass} ${dbName} > ${filePath} &&
+                    tar -czf "${filePath%.sql}.tar.gz" --directory ${folderPath} ${fileName}
+                    rm -f "${filePath}.lock" &&
+                    rm ${filePath}
+                fi
             fi
-        fi
-    done
+        done
+    fi
 fi
 
 unset magentoPath
