@@ -71,7 +71,8 @@ if [ "${testDownload}" = "y" ] ; then
             mkdir -p ${outputFolder}
         else
             if [ "$(ls ${outputFolder})" ]; then
-                rm ${outputFolder}/${host}*tar.gz
+                # Unfortunately, test -f doesn't support multiple file
+                for i in "${outputFolder}/${host}*tar.gz" ; do test -f "$i" && rm "${outputFolder}/${host}*tar.gz" && break ; done # Unfortunately, test -f doesn't support multiple file
             fi
         fi
         if [ ! -w "${outputFolder}" ] ; then
