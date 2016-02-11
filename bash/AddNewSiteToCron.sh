@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
-outputFolder="./databases"
+outputFolder="databases"
 configFile="sites.ini";
+
+# script location
+scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# make paths relative to script
+if [[ ${outputFolder} != /* ]]; then
+    outputFolder=${scriptDir}/${outputFolder}
+fi
+if [[ ${configFile} != /* ]]; then
+    configFile=${scriptDir}/${configFile}
+fi
 
 echo "site url?"
 read host
@@ -18,7 +28,7 @@ read name
 
 siteLogin="${user}@${host}"
 
-catScript=$(cat dumpMagentoDatabase.sh)
+catScript=$(cat ${scriptDir}/dumpMagentoDatabase.sh)
 sshReply=$( ssh ${siteLogin} "url=${host} && siteRootTest=true && ${catScript}")
 
 greppedSshReply=$(echo "${sshReply}" | grep -i "Connection refused")

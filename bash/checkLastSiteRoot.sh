@@ -1,7 +1,17 @@
 #!/usr/bin/bash
 
-outputFolder="./databases"
+outputFolder="databases"
 configFile="sites.ini";
+
+# script location
+scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# make paths relative to script
+if [[ ${outputFolder} != /* ]]; then
+    outputFolder=${scriptDir}/${outputFolder}
+fi
+if [[ ${configFile} != /* ]]; then
+    configFile=${scriptDir}/${configFile}
+fi
 
 errors=''
 

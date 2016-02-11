@@ -1,6 +1,16 @@
 #!/bin/bash
-outputFolder="./databases"
+outputFolder="databases"
 configFile="sites.ini";
+
+# script location
+scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# make paths relative to script
+if [[ ${outputFolder} != /* ]]; then
+    outputFolder=${scriptDir}/${outputFolder}
+fi
+if [[ ${configFile} != /* ]]; then
+    configFile=${scriptDir}/${configFile}
+fi
 
 errors=''
 
@@ -37,7 +47,7 @@ for SEC in $_SECTIONS; do
 
 	siteLogin="${user}@${host}"
 
-	catScript=$(cat dumpMagentoDatabase.sh)
+	catScript=$(cat ${scriptDir}/dumpMagentoDatabase.sh)
 
     echo 'creating databases'
 	if [ -z ${docRoot} ] ; then
@@ -50,7 +60,7 @@ for SEC in $_SECTIONS; do
 	sshReplyLastLine=$( echo "${sshReply}" | sed -e '$!d')
     if [ "$sshReplyLastLine" = "Finished" ] ; then
         if [ ! -d "${outputFolder}" ] ; then
-            mkdir --p ${outputFolder}
+            mkdir -p ${outputFolder}
         else
             if [ "$(ls ${outputFolder})" ]; then
                 rm ${outputFolder}/${host}*tar.gz
@@ -67,4 +77,4 @@ for SEC in $_SECTIONS; do
     fi
 done
 
-printf "${errors}" > dbDumpErrors.log
+printf "${errors}" > ${scriptDir}/dbDumpErrors.log
