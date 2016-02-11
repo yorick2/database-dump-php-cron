@@ -16,6 +16,9 @@ unset docRoot
 
 echo "site url?"
 read host
+host="${host#http://}";
+host="${host#https://}";
+host="${host%/}";
 if [ -f ${configFile} ]; then
     greppedUrl=$(grep "^[[:space:]]*host[[:space:]][[:space:]]*=[[:space:]][[:space:]]*${host}[[:space:]]*$" < ${configFile})
     if [ ! -z "${greppedUrl}" ] ; then

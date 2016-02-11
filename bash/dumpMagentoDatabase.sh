@@ -108,18 +108,13 @@ if [ -z ${magentoPath} ]; then
     elif [ ! -z "${isNginx}" ] ; then
     	 nginxConfDir='/etc/nginx/sites-enabled'
     	 if [ -d "${nginxConfDir}" ] ; then
-    		sp='[:space:]'
-			s='[[:space:]]'
-			nginxConfFile=$( grep --files-with-matches "server_name${s}${s}*${url}[${sp};]" ${nginxConfDir}/* )
+			nginxConfFile=$( grep --files-with-matches "(?!#)server_name${s}${s}*${url}[${sp};]" ${nginxConfDir}/* )
 	   		echo "using this nginx conf file: ${nginxConfFile}"
     		if [ "${#nginxConfFile[@]}" = "1" ] ; then # check if desired no of files
-    			if [ ! -z "${nginxConfFile}" ]; then # line neededto check not empty array of length 1
+    			if [ ! -z "${nginxConfFile}" ]; then # line needed to check not empty array of length 1
 				  string=$( sed -e 's/[#].*$//' < ${nginxConfFile} )
 				  # add ; to EOL and put into single line
 				  string=$( echo "${string}" | sed -e 's/$/;/g' | sed ':a;N;$!ba;s/\n//g' );
-				  # define space short hand for later user
-				  sp='[:space:]'
-				  s='[[:space:]]'
 				  # add |'s to allow patern matching of | separeted sections
 				  delimter=";${s}*server${s}${s}*{"
 				  string=$( echo "${string}" | sed -e "s/${delimter}/|/g" );
@@ -137,10 +132,7 @@ if [ -z ${magentoPath} ]; then
 		        fi
 		    fi
     		if [ "${#nginxConfSingleFile[@]}" = "1" ] ; then # check if desired no of files
-    			if [ ! -z "${nginxConfSingleFile}" ] ; then # line neededto check not empty array of length 1
-		    	    # define space short hand for later user
-					sp='[:space:]'
-					s='[[:space:]]'
+    			if [ ! -z "${nginxConfSingleFile}" ] ; then # line needed to check not empty array of length 1
 		    	    # remove comments
 		    	    string=$( sed -e 's/[#].*$//' <  ${nginxConfSingleFile} )
 		    	    # find lines setting server name
