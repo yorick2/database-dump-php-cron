@@ -12,6 +12,8 @@ if [[ ${configFile} != /* ]]; then
     configFile=${scriptDir}/${configFile}
 fi
 
+unset docRoot
+
 echo "site url?"
 read host
 if [ -f ${configFile} ]; then
@@ -41,10 +43,6 @@ if [ !  -z "${greppedSshReply}" ] ; then
     echo "Document root not set"
     echo "Document root?"
     read docRoot
-    echo "[${host}]" >> ${configFile}
-    echo "user = ${user}" >> ${configFile}
-    echo "host = ${host}" >> ${configFile}
-    echo "docRoot = ${docRoot}" >> ${configFile}
     exit
 else
     echo ${sshReply} | grep -oe "magentoPath[[:space:]]*=[[:space:]]*[^[:space:]]*"
@@ -55,7 +53,14 @@ read testDownload
 if [ "${testDownload}" = "y" ] ; then
     echo "running test download"
 
-    sshReply=$(ssh ${siteLogin} "url=${host} && ${catScript}")
+    echo 'creating databases'
+	if [ -z ${docRoot} ] ; then
+		sshReply=$( ssh ${siteLogin} "url=${host} && ${catScript}" )
+	else
+		sshReply=$( ssh ${siteLogin} "url=${host} && magentoPath=${docRoot} && ${catScript}" )
+		unset docRoot
+	fi
+
     sshReplyLastLine=$( echo "${sshReply}" | sed -e '$!d')
 
     if [ "$sshReplyLastLine" = "Finished" ] ; then
@@ -76,6 +81,9 @@ if [ "${testDownload}" = "y" ] ; then
              echo "[${host}]" >> ${configFile}
              echo "user = ${user}" >> ${configFile}
              echo "host = ${host}" >> ${configFile}
+             if [ ! -z "${docRoot}" ] ; then
+                echo "docRoot = ${docRoot}" >> ${configFile}
+             fi
         else
             echo "error: rsync failed"
         fi
