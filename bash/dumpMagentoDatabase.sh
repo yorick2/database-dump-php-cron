@@ -42,6 +42,7 @@ fi
 # define space short hand for later user
 sp='[:space:]'
 s='[[:space:]]'
+eval userDir=~$(whoami); # get user folder location
 
 ##### get web folder ####
 if [ -z ${magentoPath} ]; then
@@ -168,7 +169,7 @@ if [ -z ${magentoPath} ]; then
 fi
 
 if [ "${siteRootTest}" != "true" ] ; then
-    eval userDir=~$(whoami); # get user folder location
+    # replace ~ with user folder
     magentoPath="${magentoPath/\~/${userDir}}"
     cd ${magentoPath}
 
@@ -196,10 +197,21 @@ if [ "${siteRootTest}" != "true" ] ; then
         for i in "${folderPath}/*.tar.gz" ; do test -f "$i" && rm "${folderPath}/${url}*.tar.gz" && break ; done # Unfortunately, test -f doesn't support multiple file
     fi
 
+    n98Reply=$(n98-magerun.phar)
+    n98Location=""
+    if [ -z "${n98Reply}" ] ; then
+        n98Location="/tmp/"
+        if [ ! -x ${n98Location}n98-magerun.phar ] ; then
+            echo "attempting to install n98"
+            wget http://files.magerun.net/n98-magerun-latest.phar -O ${n98Location}n98-magerun.phar &&
+            chmod +x ${n98Location}n98-magerun.phar &&
+            echo "installed n98 successfully"
+        fi
+    fi
     if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
         if [ ! -e "${filePath}.lock" ] ; then
             touch "${filePath}.lock" &&
-            n98-magerun.phar db:dump --strip="$truncateTablesList" ${filePath} &&
+            ${n98Location}n98-magerun.phar db:dump --strip="${truncateTablesList}" ${filePath} &&
             tar -czf "${filePath%.sql}.tar.gz" --directory ${folderPath} ${fileName}
             rm -f "${filePath}.lock"
             rm ${filePath}
