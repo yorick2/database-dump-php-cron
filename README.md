@@ -5,13 +5,17 @@ Bash will fetch a magento database from a group of your dev sites automatically 
 
 ###Installation
 - add all the files in the bash folder onto your database storage server, no files need to go onto the dev server
-- Copy example.ini to sites.ini
-- change the site listing to your sites
-- comment out the docRoot line with a ; or # at the start 
-- test if the program can automatically find the website root folder by running checkLastSiteRoot.sh and it will return the path to the root folder of the last site in the sites.ini if its successful.
-- if it is unsuccessful add the line docRoot to your site listing the sites.ini, which can include a ~
-- to run program run the getAllDatabase.sh
+- add a new server to download list by running addNewSiteToList.sh
+- to run full program program run the getAllDatabase.sh, I suggest a cron for this
 - the databases will be in compressed files in a databases folder created where you put the bash files
+
+###Removing sites from list
+Just remove the site's settings from the sites.ini file
+
+###Limitations
+- For automatic fetching document root location nginx sites-enabled files cant have server_name or root stated on the same line as something else
+- compressed databases are left in a /tmp/databases folder on the dev servers, but only one of each and this folder is emptied each time the script runs
+- the document root may not always be found automatically. If you run the addNewSiteToList.sh script it will inform you of this and ask for a document root.
 
 ##php
 Php scripts to fetch a magento database from a group of your dev sites automatically removing old ones, so it can be fired nightly by a cron.
