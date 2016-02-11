@@ -108,7 +108,7 @@ if [ -z ${magentoPath} ]; then
     elif [ ! -z "${isNginx}" ] ; then
     	 nginxConfDir='/etc/nginx/sites-enabled'
     	 if [ -d "${nginxConfDir}" ] ; then
-			nginxConfFile=$( grep --files-with-matches "(?!#)server_name${s}${s}*${url}[${sp};]" ${nginxConfDir}/* )
+			nginxConfFile=$( grep --files-with-matches "^${s}*server_name${s}${s}*${url}[${sp};]" ${nginxConfDir}/* )
 	   		echo "using this nginx conf file: ${nginxConfFile}"
     		if [ "${#nginxConfFile[@]}" = "1" ] ; then # check if desired no of files
     			if [ ! -z "${nginxConfFile}" ]; then # line needed to check not empty array of length 1
