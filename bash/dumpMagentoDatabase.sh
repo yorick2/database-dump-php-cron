@@ -193,7 +193,7 @@ if [ "${siteRootTest}" != "true" ] ; then
         exit
     else
         # Unfortunately, test -f doesn't support multiple file
-        for i in "${folderPath}/*.tar.gz" ; do test -f "$i" && rm "${folderPath}/*.tar.gz" && break ; done # Unfortunately, test -f doesn't support multiple file
+        for i in "${folderPath}/*.tar.gz" ; do test -f "$i" && rm "${folderPath}/${url}*.tar.gz" && break ; done # Unfortunately, test -f doesn't support multiple file
     fi
 
     if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
