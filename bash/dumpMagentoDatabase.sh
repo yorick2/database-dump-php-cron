@@ -9,6 +9,8 @@ if [ -z ${url} ] ; then
         echo 'to check if web root can be found run:'
 		echo 'bash dumpMagentoDatabase.sh <<<url>>> --siteRootTest'
         echo
+        echo 'to stop rewrites being truncated '
+        echo 'truncateRewrites=false; Reritebash dumpMagentoDatabase.sh <<<url>>>'
 		exit;
 	else
 		url=$1
