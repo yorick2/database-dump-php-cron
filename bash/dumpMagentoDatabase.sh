@@ -185,8 +185,12 @@ if [ "${siteRootTest}" != "true" ] ; then
         echo "${folderPath} is not writable"
         exit
     else
-        # Unfortunately, test -f doesn't support multiple file
-        for i in "${folderPath}/*.tar.gz" ; do test -f "$i" && rm "${folderPath}/${url}*.tar.gz" && break ; done # Unfortunately, test -f doesn't support multiple file
+        if ls ${folderPath}/${url}*.tar.gz 1> /dev/null 2>&1; then
+            echo "removing old files from ${folderPath}"
+            rm ${folderPath}/${url}*.tar.gz
+        else
+            echo "${folderPath} is empty"
+        fi
     fi
 
     n98Reply=$(n98-magerun.phar)

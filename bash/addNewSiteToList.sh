@@ -70,9 +70,11 @@ if [ "${testDownload}" = "y" ] ; then
         if [ ! -d "${outputFolder}" ] ; then
             mkdir -p ${outputFolder}
         else
-            if [ "$(ls ${outputFolder})" ]; then
-                # Unfortunately, test -f doesn't support multiple file
-                for i in "${outputFolder}/${host}*tar.gz" ; do test -f "$i" && rm "${outputFolder}/${host}*tar.gz" && break ; done # Unfortunately, test -f doesn't support multiple file
+            if ls ${outputFolder}/${host}*tar.gz 1> /dev/null 2>&1; then
+                echo "removing old files from ${outputFolder}"
+                rm ${outputFolder}/${host}*tar.gz
+            else
+                echo "${outputFolder} is empty"
             fi
         fi
         if [ ! -w "${outputFolder}" ] ; then
