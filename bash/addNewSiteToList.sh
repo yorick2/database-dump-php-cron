@@ -14,6 +14,31 @@ fi
 
 unset docRoot
 
+random=$(( $RANDOM % 4 ))
+if [ "${random}" = "1" ] ; then
+   echo '-- monty python mode ---'
+   echo 'What... is your name?'
+   read x
+   if [ -z "${x}" ] ; then
+       echo "Auuuuuuuugh"
+       exit
+   fi
+   echo 'What... is your quest?'
+   read x
+   if [ -z "${x}" ] ; then
+       echo "Auuuuuuuugh"
+       exit
+   fi
+   echo 'What... is the air-speed velocity of an unladen swallow?'
+   read x
+   if [ -z "${x}" ] ; then
+       echo "Auuuuuuuugh"
+       exit
+   else
+       echo "How do know so much about swallows?"
+   fi
+fi
+
 echo "site url?"
 read host
 host="${host#http://}";
