@@ -31,10 +31,32 @@ read user
 echo "site name"
 read name
 
+if [ -z "${host}" ] ; then
+   exit
+fi
+if [ -z "${user}" ] ; then
+   exit
+fi
+if [ -z "${name}" ] ; then
+   nmae="${host}"
+fi
+
 siteLogin="${user}@${host}"
+
+sshReply=$(ssh  -o BatchMode=yes ${siteLogin} 'echo true');
+if [ "${sshReply}" != "true" ] ; then
+    echo "ssh-copy-id"
+    sshReply=$( ssh-copy-id ${siteLogin} )
+    if [ -z "${sshReply}" ] ; then
+        exit
+    fi
+fi
+
 
 catScript=$(cat ${scriptDir}/dumpMagentoDatabase.sh)
 sshReply=$( ssh ${siteLogin} "url=${host} && siteRootTest=true && ${catScript}")
+
+
 
 greppedSshReply=$(echo "${sshReply}" | grep -i "Connection refused")
 if [ !  -z "${greppedSshReply}" ] ; then

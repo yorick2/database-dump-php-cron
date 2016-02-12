@@ -16,6 +16,7 @@ Just remove the site's settings from the sites.ini file
 - For automatic fetching document root location nginx sites-enabled files cant have server_name or root stated on the same line as something else
 - compressed databases are left in a /tmp/databases folder on the dev servers, but only one of each and this folder is emptied each time the script runs
 - the document root may not always be found automatically. If you run the addNewSiteToList.sh script it will inform you of this and ask for a document root.
+- requires ssh-copy-id for adding key to server if its not already there
 
 ###notes
 Outputs like the below from the db dump script is nothing to worry about. Its n98-magerun.phar falling back  to the /tmp/magento/var folder as your magento system is using that instead of the standard of the var folder inside you web document root
