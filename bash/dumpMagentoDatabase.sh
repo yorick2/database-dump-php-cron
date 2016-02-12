@@ -216,8 +216,12 @@ if [ "${siteRootTest}" != "true" ] ; then
 
     #### wordpress db dump ####
     hasWordpress="false"
-    # Unfortunately, test -f doesn't support multiple file
-    for i in "${folderPath}/*.tar.gz" ; do test -f "$i" && hasWordpress="true" && break ; done # Unfortunately, test -f doesn't support multiple file
+    if ls ./*/wp-config.php 1> /dev/null 2>&1; then
+        echo "wordpress subsite found"
+        hasWordpress="true"
+    else
+        echo "no wordpress subsite found"
+    fi
     if [ "${hasWordpress}" = "true" ] ; then
         wordpressConfigFiles=$(ls -x ./*/wp-config.php)
         for configFile in $wordpressConfigFiles; do
