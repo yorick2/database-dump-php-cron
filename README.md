@@ -17,6 +17,18 @@ Just remove the site's settings from the sites.ini file
 - compressed databases are left in a /tmp/databases folder on the dev servers, but only one of each and this folder is emptied each time the script runs
 - the document root may not always be found automatically. If you run the addNewSiteToList.sh script it will inform you of this and ask for a document root.
 
+###notes
+Outputs like the below from the db dump script is nothing to worry about. Its n98-magerun.phar falling back  to the /tmp/magento/var folder as your magento system is using that instead of the standard of the var folder inside you web document root
+```Fallback folder /tmp/magento/var is used in n98-magerun
+
+n98-magerun is using the fallback folder. If there is another folder configured for Magento, this can cause serious problems.
+Please refer to https://github.com/netz98/n98-magerun/wiki/File-system-permissions for more information.
+
+Fallback folder /tmp/magento/var is used in n98-magerun
+
+n98-magerun is using the fallback folder. If there is another folder configured for Magento, this can cause serious problems.
+Please refer to https://github.com/netz98/n98-magerun/wiki/File-system-permissions for more information.```
+
 ##php
 Php scripts to fetch a magento database from a group of your dev sites automatically removing old ones, so it can be fired nightly by a cron.
 
