@@ -38,7 +38,7 @@ if [ -z "${user}" ] ; then
    exit
 fi
 if [ -z "${name}" ] ; then
-   nmae="${host}"
+   name="${host}"
 fi
 
 siteLogin="${user}@${host}"
@@ -52,21 +52,19 @@ if [ "${sshReply}" != "true" ] ; then
     fi
 fi
 
-
 catScript=$(cat ${scriptDir}/dumpMagentoDatabase.sh)
 sshReply=$( ssh ${siteLogin} "url=${host} && siteRootTest=true && ${catScript}")
 
-
-
 greppedSshReply=$(echo "${sshReply}" | grep -i "Connection refused")
 if [ !  -z "${greppedSshReply}" ] ; then
+   echo 'connection refused'
    exit
 fi
 
-greppedSshReply=$(echo "${sshReply}" | grep "Document root not set")
+greppedSshReply=$(echo "${sshReply}" | grep "Document root not found")
 if [ !  -z "${greppedSshReply}" ] ; then
-    echo "Document root not set"
-    echo "Document root?"
+    echo "Web document root not found"
+    echo "Web document root?"
     read docRoot
     exit
 else
@@ -124,6 +122,9 @@ else
     echo "[${host}]" >> ${configFile}
     echo "user = ${user}" >> ${configFile}
     echo "host = ${host}" >> ${configFile}
+    if [ ! -z "${docRoot}" ] ; then
+        echo "docRoot = ${docRoot}" >> ${configFile}
+    fi
 fi
 
 

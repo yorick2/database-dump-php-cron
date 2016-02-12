@@ -155,7 +155,7 @@ if [ -z ${magentoPath} ]; then
 	    fi
     fi
     if [ -z "${magentoPath}" ] ; then
-    	echo 'Document root not set';
+    	echo 'Document root not found';
     	exit;
     else
         echo "magentoPath=${magentoPath}"
