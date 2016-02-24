@@ -77,7 +77,7 @@ for SEC in $_SECTIONS; do
         rsync -ahz ${siteLogin}:/tmp/databases/* ${outputFolder}
     else
         errors="${errors}\n${url}: ${sshReplyLastLine}"
+        printf "${errors}" >> ${scriptDir}/dbDumpErrors.log
     fi
 done
 
-printf "${errors}" > ${scriptDir}/dbDumpErrors.log

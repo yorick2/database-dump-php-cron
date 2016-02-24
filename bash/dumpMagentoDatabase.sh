@@ -225,26 +225,49 @@ if [ "${siteRootTest}" != "true" ] ; then
         echo "no wordpress subsite found"
     fi
     if [ "${hasWordpress}" = "true" ] ; then
+        wordpressDatabases=()
+        wordpressSettingFileName="${url}.wpsetting"
+        '' > ${wordpressSettingFileName}
         wordpressConfigFiles=$(ls -x ./*/wp-config.php)
-        for configFile in $wordpressConfigFiles; do
+        for configFile in ${wordpressConfigFiles}; do
             wordpressFolder=$( echo "${configFile%/*}" | sed s/^[[:space:]]*[./]*// )
-            fileRef="${url}-${wordpressFolder}"
+
+            dbName=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_NAME' | sed -e "s/.*,[[:space:]]*'\(.*\)'.*/\1/" )
+            dbUser=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_USER' | sed -e "s/.*,[[:space:]]*'\(.*\)'.*/\1/" )
+            dbPass=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_PASSWORD' | sed -e "s/.*,[[:space:]]*'\(.*\)'.*/\1/" )
+            dbHost=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_HOST' | sed -e "s/.*,[[:space:]]*'\(.*\)'.*/\1/" )
+            tablePrefix=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'table_prefix' | sed -e "s/.*=[[:space:]]*'\(.*\)'.*/\1/" )
+
+            inArray='false'
+            for element in "${wordpressDatabases}"; do
+                if [[ ${element} == ${dbName} ]]; then
+                    inArray='true'
+                    break
+                fi
+            done
+
             date=`date +%Y-%m-%d`
-            fileName="${fileRef}--${date}.sql"
+            fileName="${url}-${dbName}--${date}.sql"
             filePath="${folderPath}/${fileName}"
-            if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
-                if [ ! -e "${filePath}.lock" ] ; then
-                    dbName=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_NAME' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
-                    dbUser=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_USER' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
-                    dbPass=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_PASSWORD' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
-                    dbHost=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_HOST' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
-                    touch "${filePath}.lock" &&
-                    mysqldump -h ${dbHost} -u${dbUser} -p${dbPass} ${dbName} > ${filePath} &&
-                    tar -czf "${filePath%.sql}.tar.gz" --directory ${folderPath} ${fileName}
-                    rm -f "${filePath}.lock" &&
-                    rm ${filePath}
+
+            "[${wordpressFolder}]" >> ${wordpressSettingFileName}
+            "fileName=${fileName}" >> ${wordpressSettingFileName}
+            "dbName=${dbName}" >> ${wordpressSettingFileName}
+            "tablePrefix=${tablePrefix}" >> ${wordpressSettingFileName}
+
+            if [[ inArray == 'false' ]]; then
+                wordpressDatabases+=("dbName")
+                if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
+                    if [ ! -e "${filePath}.lock" ] ; then
+                        touch "${filePath}.lock" &&
+                        mysqldump -h ${dbHost} -u${dbUser} -p${dbPass} ${dbName} > ${filePath} &&
+                        tar -czf "${filePath%.sql}.tar.gz" --directory ${folderPath} ${fileName}
+                        rm -f "${filePath}.lock" &&
+                        rm ${filePath}
+                    fi
                 fi
             fi
+
         done
     fi
 fi
