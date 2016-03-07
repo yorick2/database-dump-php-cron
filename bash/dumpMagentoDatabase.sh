@@ -225,9 +225,10 @@ if [ "${siteRootTest}" != "true" ] ; then
         echo "no wordpress subsite found"
     fi
     if [ "${hasWordpress}" = "true" ] ; then
+        echo "wordpress=true"   ###--delete me
         wordpressDatabases=()
         wordpressSettingFileName="${url}.wpsetting"
-        '' > ${wordpressSettingFileName}
+        echo '' > ${folderPath}/${wordpressSettingFileName}
         wordpressConfigFiles=$(ls -x ./*/wp-config.php)
         for configFile in ${wordpressConfigFiles}; do
             wordpressFolder=$( echo "${configFile%/*}" | sed s/^[[:space:]]*[./]*// )
@@ -239,9 +240,13 @@ if [ "${siteRootTest}" != "true" ] ; then
             tablePrefix=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'table_prefix' | sed -e "s/.*=[[:space:]]*'\(.*\)'.*/\1/" )
 
             inArray='false'
+            echo "dbname=${dbName}"   ###--delete me
+            echo "wordpressdatabases=${wordpressDatabases}"   ###--delete me
             for element in "${wordpressDatabases}"; do
+                echo "element=${element}"   ###--delete me
                 if [[ ${element} == ${dbName} ]]; then
                     inArray='true'
+                    echo 'in array'   ###--delete me
                     break
                 fi
             done
@@ -250,12 +255,13 @@ if [ "${siteRootTest}" != "true" ] ; then
             fileName="${url}-${dbName}--${date}.sql"
             filePath="${folderPath}/${fileName}"
 
-            "[${wordpressFolder}]" >> ${wordpressSettingFileName}
-            "fileName=${fileName}" >> ${wordpressSettingFileName}
-            "dbName=${dbName}" >> ${wordpressSettingFileName}
-            "tablePrefix=${tablePrefix}" >> ${wordpressSettingFileName}
+            echo "[${wordpressFolder}]" >> ${folderPath}/${wordpressSettingFileName}
+            echo "fileName=${filePath%.sql}.tar.gz" >> ${folderPath}/${wordpressSettingFileName}
+            echo "dbName=${dbName}" >> ${folderPath}/${wordpressSettingFileName}
+            echo "tablePrefix=${tablePrefix}" >> ${folderPath}/${wordpressSettingFileName}
 
-            if [[ inArray == 'false' ]]; then
+            if [ "$inArray" == "false" ]; then
+                echo "exporting wordpress db"   ###--delete me
                 wordpressDatabases+=("dbName")
                 if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
                     if [ ! -e "${filePath}.lock" ] ; then
