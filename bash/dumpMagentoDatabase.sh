@@ -7,42 +7,53 @@ if [ -z ${url} ] ; then
         echo 'or bash dumpMagentoDatabase.sh <<<url>>> <<<outputFolder>>>> <<<magentoFolder>>>>'
 		echo
         echo 'to check if web root can be found run:'
-		echo 'bash dumpMagentoDatabase.sh <<<url>>> --siteRootTest'
+		echo 'bash dumpMagentoDatabase.sh --siteRootTest <<<url>>> '
         echo
+        echo 'to truncate rewrites run:'
+		echo 'bash dumpMagentoDatabase.sh --truncateRewrites <<<url>>> '
+		echo
         echo 'to stop rewrites being truncated '
         echo 'truncateRewrites=false; Reritebash dumpMagentoDatabase.sh <<<url>>>'
 		exit;
 	fi
 fi
 
-if [ "${1}" = "--noRewritesTable"  ] ; then
-    truncateRewrites="true"
-    echo 'setting truncateRewrites to true'
-    shift
-fi
+##### set options #####
 
-url="${1}"
-
-if [ "$2" = "--siteRootTest"  ] ; then
-    siteRootTest=true
-else
-    if [ -z ${folderPath} ]; then
-        if [ -z "$2" ] ; then
-            folderPath='/tmp/databases'
-        else
-            folderPath="$2"
-        fi
-    fi
-fi
-
+while test $# -gt 0; do
+    case "$1" in
+        --truncateRewrites)
+            truncateRewrites="true"
+            echo 'setting truncateRewrites to true'
+            shift
+            ;;
+        --siteRootTest)
+            siteRootTest=true
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
 if [ -z ${siteRootTest} ] ; then
     siteRootTest="false"
 fi
 
+url="${1}"
+
+if [ -z ${folderPath} ]; then
+    if [ -z "$2" ] ; then
+        folderPath='/tmp/databases'
+    else
+        folderPath="$2"
+    fi
+fi
 
 if [ ! -z "$3" ] ; then
     magentoPath=$3
 fi
+
+##### find user dir #####
 
 # define space short hand for later user
 sp='[:space:]'
