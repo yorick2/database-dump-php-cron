@@ -91,7 +91,6 @@ if [ !  -z "${greppedSshReply}" ] ; then
     echo "Web document root not found"
     echo "Web document root?"
     read docRoot
-    exit
 else
     echo ${sshReply} | grep -oe "magentoPath[[:space:]]*=[[:space:]]*[^[:space:]]*"
 fi
