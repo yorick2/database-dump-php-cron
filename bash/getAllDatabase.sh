@@ -73,10 +73,10 @@ for SEC in $_SECTIONS; do
             mkdir -p ${outputFolder}
         else
             if ls ${outputFolder}/${host}*tar.gz 1> /dev/null 2>&1; then
-                echo "removing old files for this site from ${outputFolder}"
+                echo "removing old files for ${host} site from ${outputFolder}"
                 rm ${outputFolder}/${host}*tar.gz
             else
-                echo "no need to emtpty ${outputFolder}, it dosnt have any files from this site"
+                echo "no need to empty ${outputFolder}, it dosnt have any files from ${host}"
             fi
         fi
         if [ ! -w "${outputFolder}" ] ; then
