@@ -12,10 +12,16 @@ if [ -z ${url} ] ; then
         echo 'to stop rewrites being truncated '
         echo 'truncateRewrites=false; Reritebash dumpMagentoDatabase.sh <<<url>>>'
 		exit;
-	else
-		url=$1
 	fi
 fi
+
+if [ "${1}" = "--noRewritesTable"  ] ; then
+    truncateRewrites="true"
+    echo 'setting truncateRewrites to true'
+    shift
+fi
+
+url="${1}"
 
 if [ "$2" = "--siteRootTest"  ] ; then
     siteRootTest=true
@@ -33,9 +39,6 @@ if [ -z ${siteRootTest} ] ; then
     siteRootTest="false"
 fi
 
-if [ -z ${truncateRewrites} ]; then
-	truncateRewrites=true  ######### should this set to yes by default
-fi
 
 if [ ! -z "$3" ] ; then
     magentoPath=$3
@@ -173,10 +176,12 @@ if [ "${siteRootTest}" != "true" ] ; then
     fileName="${fileRef}--${date}.sql"
     filePath="${folderPath}/${fileName}"
 
-    if [ "${truncateRewrites}"="true" ] ; then
+    if [ "${truncateRewrites}" = "true" ] ; then
         truncateTablesList='core_url_rewrite @development';
+        echo "truncateTableList = ${truncateTablesList}"
     else
         truncateTablesList='@development';
+        echo "truncateTableList = ${truncateTablesList}"
     fi
 
     if [ ! -d "${folderPath}" ] ; then
