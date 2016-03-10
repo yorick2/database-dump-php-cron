@@ -2,6 +2,11 @@
 outputFolder="databases"
 configFile="sites.ini";
 
+if [ ! -z "${1}"  ] ; then
+    testSectionName="${1}" # the name of the site to test in [] from the sites.ini file
+    echo "testing for ${1}"
+fi
+
 # script location
 scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # make paths relative to script
@@ -24,7 +29,12 @@ else
     fi
 fi
 
-_SECTIONS=`cat ${configFile} | grep -o -P "\[([a-zA-Z0-9-._ ]+)\]" | tr -d [] | sed ':a;N;$!ba;s/\n/ /g'`
+
+if [ -z "${testSectionName}" ]; then
+    _SECTIONS=`cat ${configFile} | grep -o -P "\[([a-zA-Z0-9-._ ]+)\]" | tr -d [] | sed ':a;N;$!ba;s/\n/ /g'`
+else
+    _SECTIONS="${testSectionName}"
+fi
 
 ini_parser() {
     FILE=$1
@@ -63,10 +73,10 @@ for SEC in $_SECTIONS; do
             mkdir -p ${outputFolder}
         else
             if ls ${outputFolder}/${host}*tar.gz 1> /dev/null 2>&1; then
-                echo "removing old files from ${outputFolder}"
+                echo "removing old files for this site from ${outputFolder}"
                 rm ${outputFolder}/${host}*tar.gz
             else
-                echo "${outputFolder} is empty"
+                echo "no need to emtpty ${outputFolder}, it dosnt have any files from this site"
             fi
         fi
         if [ ! -w "${outputFolder}" ] ; then

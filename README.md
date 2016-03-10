@@ -18,7 +18,13 @@ Just remove the site's settings from the sites.ini file
 - the document root may not always be found automatically. If you run the addNewSiteToList.sh script it will inform you of this and ask for a document root.
 - requires ssh-copy-id for adding key to server if its not already there
 
-###notes
+###Test a single site
+getAllDatabase.sh <<site name defined in sites.ini>>
+e.g. getAllDatabase.sh example
+
+note: the site name is found in the sites.ini file between the [] above the site info
+
+###Notes
 Outputs like the below from the db dump script is nothing to worry about. Its n98-magerun.phar falling back  to the /tmp/magento/var folder as your magento system is using that instead of the standard of the var folder inside you web document root
 ```Fallback folder /tmp/magento/var is used in n98-magerun
 
