@@ -60,15 +60,15 @@ for SEC in $_SECTIONS; do
 	catScript=$(cat ${scriptDir}/dumpMagentoDatabase.sh)
 
     if [ "${truncateRewrites}" = "true" ]; then
-        _truncateRewrites="truncateRewrites=true"
+        _truncateRewrites="&& truncateRewrites=true"
         echo 'ignoring rewrites table'
     fi
 
     echo 'creating databases'
 	if [ -z ${docRoot} ] ; then
-		sshReply=$( ssh ${siteLogin} "url=${host} && $_truncateRewrites && ${catScript}" )
+		sshReply=$( ssh ${siteLogin} "url=${host} $_truncateRewrites && ${catScript}" )
 	else
-		sshReply=$( ssh ${siteLogin} "url=${host} && $_truncateRewrites && magentoPath=${docRoot} && ${catScript}" )
+		sshReply=$( ssh ${siteLogin} "url=${host} $_truncateRewrites && magentoPath=${docRoot} && ${catScript}" )
 		unset docRoot
 	fi
 
