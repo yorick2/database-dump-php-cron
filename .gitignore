@@ -1,4 +1,5 @@
 /nbproject
 /bash/databases
 /bash/sites.ini
+/bash/dbDumpErrors.log
 php/databases
