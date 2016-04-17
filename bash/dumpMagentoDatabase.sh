@@ -255,8 +255,7 @@ if [ "${siteRootTest}" != "true" ] ; then
     # dump all wordpress databases
     if [ "${hasWordpress}" = "true" ] ; then
         echo "wordpress=true"   ###--delete me
-        # create empty array
-        wordpressDatabases=()
+        
         # create empty wordpress setting file
         wordpressSettingFileName="${url}.wpsetting"
         echo '' > ${folderPath}/${wordpressSettingFileName}
@@ -276,18 +275,6 @@ if [ "${siteRootTest}" != "true" ] ; then
             dbHost=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_HOST' | sed -e "s/.*,[[:space:]]*'\(.*\)'.*/\1/" )
             tablePrefix=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'table_prefix' | sed -e "s/.*=[[:space:]]*'\(.*\)'.*/\1/" )
 
-            inArray='false'
-            echo "dbname=${dbName}"   ###--delete me
-            echo "wordpressdatabases=${wordpressDatabases}"   ###--delete me
-            for element in "${wordpressDatabases}"; do
-                echo "element=${element}"   ###--delete me
-                if [[ ${element} == ${dbName} ]]; then
-                    inArray='true'
-                    echo 'in array'   ###--delete me
-                    break
-                fi
-            done
-
             # make db dump file path
             date=`date +%Y-%m-%d`
             fileName="${url}-${dbName}--${date}.sql"
@@ -299,18 +286,14 @@ if [ "${siteRootTest}" != "true" ] ; then
             echo "dbName=${dbName}" >> ${folderPath}/${wordpressSettingFileName}
             echo "tablePrefix=${tablePrefix}" >> ${folderPath}/${wordpressSettingFileName}
 
-            if [ "$inArray" == "false" ]; then
-                echo "exporting wordpress db"   ###--delete me
-                wordpressDatabases+=("dbName")
-                # dump database if not already done
-                if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
-                    if [ ! -e "${filePath}.lock" ] ; then
-                        touch "${filePath}.lock" &&
-                        mysqldump -h ${dbHost} -u${dbUser} -p${dbPass} ${dbName} > ${filePath} &&
-                        tar -czf "${filePath%.sql}.tar.gz" --directory ${folderPath} ${fileName}
-                        rm -f "${filePath}.lock" &&
-                        rm ${filePath}
-                    fi
+            # dump database if not already done
+            if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
+                if [ ! -e "${filePath}.lock" ] ; then
+                    touch "${filePath}.lock" &&
+                    mysqldump -h ${dbHost} -u${dbUser} -p${dbPass} ${dbName} > ${filePath} &&
+                    tar -czf "${filePath%.sql}.tar.gz" --directory ${folderPath} ${fileName}
+                    rm -f "${filePath}.lock" &&
+                    rm ${filePath}
                 fi
             fi
 
