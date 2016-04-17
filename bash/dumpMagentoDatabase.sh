@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+
+# echo instructions if variables missing
 if [ -z ${url} ] ; then
 	if [ -z "$1" ] ; then
 		echo 'missing variables:'
@@ -35,11 +37,14 @@ while test $# -gt 0; do
             ;;
     esac
 done
+
 if [ -z ${siteRootTest} ] ; then
     siteRootTest="false"
 fi
 
-url="${1}"
+if [ -z ${url} ] ; then
+    url="${1}"
+fi
 
 if [ -z ${folderPath} ]; then
     if [ -z "$2" ] ; then
@@ -187,6 +192,7 @@ if [ "${siteRootTest}" != "true" ] ; then
     fileName="${fileRef}--${date}.sql"
     filePath="${folderPath}/${fileName}"
 
+    # set the truncate table list
     if [ "${truncateRewrites}" = "true" ] ; then
         truncateTablesList='core_url_rewrite @development';
         echo "truncateTableList = ${truncateTablesList}"
@@ -195,10 +201,12 @@ if [ "${siteRootTest}" != "true" ] ; then
         echo "truncateTableList = ${truncateTablesList}"
     fi
 
+    # if db folder dosnt exist create it
     if [ ! -d "${folderPath}" ] ; then
             mkdir -p "${folderPath}"
     fi
 
+    # empty db folder of tar.gz files
     if [ ! -w "${folderPath}" ] ; then
         echo "${folderPath} is not writable"
         exit
@@ -211,6 +219,7 @@ if [ "${siteRootTest}" != "true" ] ; then
         fi
     fi
 
+    # if n98 not installed, install it
     n98Reply=$(n98-magerun.phar)
     n98Location=""
     if [ -z "${n98Reply}" ] ; then
@@ -222,6 +231,8 @@ if [ "${siteRootTest}" != "true" ] ; then
             echo "installed n98 successfully"
         fi
     fi
+
+    # n98 db dump if dosnt exist
     if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
         if [ ! -e "${filePath}.lock" ] ; then
             touch "${filePath}.lock" &&
@@ -233,6 +244,7 @@ if [ "${siteRootTest}" != "true" ] ; then
     fi
 
     #### wordpress db dump ####
+    # has it got wordpress subsites
     hasWordpress="false"
     if ls ./*/wp-config.php 1> /dev/null 2>&1; then
         echo "wordpress subsite found"
@@ -240,15 +252,24 @@ if [ "${siteRootTest}" != "true" ] ; then
     else
         echo "no wordpress subsite found"
     fi
+    # dump all wordpress databases
     if [ "${hasWordpress}" = "true" ] ; then
         echo "wordpress=true"   ###--delete me
+        # create empty array
         wordpressDatabases=()
+        # create empty wordpress setting file
         wordpressSettingFileName="${url}.wpsetting"
         echo '' > ${folderPath}/${wordpressSettingFileName}
+        
+        # find all working subsite wordpress installations config files
         wordpressConfigFiles=$(ls -x ./*/wp-config.php)
+        
+        # for each wordpress install
         for configFile in ${wordpressConfigFiles}; do
+            
             wordpressFolder=$( echo "${configFile%/*}" | sed s/^[[:space:]]*[./]*// )
 
+            # get wordpress database access settings
             dbName=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_NAME' | sed -e "s/.*,[[:space:]]*'\(.*\)'.*/\1/" )
             dbUser=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_USER' | sed -e "s/.*,[[:space:]]*'\(.*\)'.*/\1/" )
             dbPass=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_PASSWORD' | sed -e "s/.*,[[:space:]]*'\(.*\)'.*/\1/" )
@@ -267,10 +288,12 @@ if [ "${siteRootTest}" != "true" ] ; then
                 fi
             done
 
+            # make db dump file path
             date=`date +%Y-%m-%d`
             fileName="${url}-${dbName}--${date}.sql"
             filePath="${folderPath}/${fileName}"
 
+            # add wordpress database settings into the wordpress setting file
             echo "[${wordpressFolder}]" >> ${folderPath}/${wordpressSettingFileName}
             echo "fileName=${filePath%.sql}.tar.gz" >> ${folderPath}/${wordpressSettingFileName}
             echo "dbName=${dbName}" >> ${folderPath}/${wordpressSettingFileName}
@@ -279,6 +302,7 @@ if [ "${siteRootTest}" != "true" ] ; then
             if [ "$inArray" == "false" ]; then
                 echo "exporting wordpress db"   ###--delete me
                 wordpressDatabases+=("dbName")
+                # dump database if not already done
                 if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
                     if [ ! -e "${filePath}.lock" ] ; then
                         touch "${filePath}.lock" &&
