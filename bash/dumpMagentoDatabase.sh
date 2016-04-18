@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+
+# echo instructions if variables missing
 if [ -z ${url} ] ; then
 	if [ -z "$1" ] ; then
 		echo 'missing variables:'
@@ -7,39 +9,56 @@ if [ -z ${url} ] ; then
         echo 'or bash dumpMagentoDatabase.sh <<<url>>> <<<outputFolder>>>> <<<magentoFolder>>>>'
 		echo
         echo 'to check if web root can be found run:'
-		echo 'bash dumpMagentoDatabase.sh <<<url>>> --siteRootTest'
+		echo 'bash dumpMagentoDatabase.sh --siteRootTest <<<url>>> '
         echo
+        echo 'to truncate rewrites run:'
+		echo 'bash dumpMagentoDatabase.sh --truncateRewrites <<<url>>> '
+		echo
         echo 'to stop rewrites being truncated '
         echo 'truncateRewrites=false; Reritebash dumpMagentoDatabase.sh <<<url>>>'
 		exit;
-	else
-		url=$1
 	fi
 fi
 
-if [ "$2" = "--siteRootTest"  ] ; then
-    siteRootTest=true
-else
-    if [ -z ${folderPath} ]; then
-        if [ -z "$2" ] ; then
-            folderPath='/tmp/databases'
-        else
-            folderPath="$2"
-        fi
-    fi
-fi
+##### set options #####
+
+while test $# -gt 0; do
+    case "$1" in
+        --truncateRewrites)
+            truncateRewrites="true"
+            echo 'setting truncateRewrites to true'
+            shift
+            ;;
+        --siteRootTest)
+            siteRootTest=true
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
 
 if [ -z ${siteRootTest} ] ; then
     siteRootTest="false"
 fi
 
-if [ -z ${truncateRewrites} ]; then
-	truncateRewrites=true  ######### should this set to yes by default
+if [ -z ${url} ] ; then
+    url="${1}"
+fi
+
+if [ -z ${folderPath} ]; then
+    if [ -z "$2" ] ; then
+        folderPath='/tmp/databases'
+    else
+        folderPath="$2"
+    fi
 fi
 
 if [ ! -z "$3" ] ; then
     magentoPath=$3
 fi
+
+##### find user dir #####
 
 # define space short hand for later user
 sp='[:space:]'
@@ -173,16 +192,21 @@ if [ "${siteRootTest}" != "true" ] ; then
     fileName="${fileRef}--${date}.sql"
     filePath="${folderPath}/${fileName}"
 
-    if [ "${truncateRewrites}"="true" ] ; then
+    # set the truncate table list
+    if [ "${truncateRewrites}" = "true" ] ; then
         truncateTablesList='core_url_rewrite @development';
+        echo "truncateTableList = ${truncateTablesList}"
     else
         truncateTablesList='@development';
+        echo "truncateTableList = ${truncateTablesList}"
     fi
 
+    # if db folder dosnt exist create it
     if [ ! -d "${folderPath}" ] ; then
             mkdir -p "${folderPath}"
     fi
 
+    # empty db folder of tar.gz files
     if [ ! -w "${folderPath}" ] ; then
         echo "${folderPath} is not writable"
         exit
@@ -195,6 +219,7 @@ if [ "${siteRootTest}" != "true" ] ; then
         fi
     fi
 
+    # if n98 not installed, install it
     n98Reply=$(n98-magerun.phar)
     n98Location=""
     if [ -z "${n98Reply}" ] ; then
@@ -206,6 +231,8 @@ if [ "${siteRootTest}" != "true" ] ; then
             echo "installed n98 successfully"
         fi
     fi
+
+    # n98 db dump if dosnt exist
     if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
         if [ ! -e "${filePath}.lock" ] ; then
             touch "${filePath}.lock" &&
@@ -217,6 +244,7 @@ if [ "${siteRootTest}" != "true" ] ; then
     fi
 
     #### wordpress db dump ####
+    # has it got wordpress subsites
     hasWordpress="false"
     if ls ./*/wp-config.php 1> /dev/null 2>&1; then
         echo "wordpress subsite found"
@@ -224,20 +252,43 @@ if [ "${siteRootTest}" != "true" ] ; then
     else
         echo "no wordpress subsite found"
     fi
+    # dump all wordpress databases
     if [ "${hasWordpress}" = "true" ] ; then
+        echo "wordpress=true"   ###--delete me
+        
+        # create empty wordpress setting file
+        wordpressSettingFileName="${url}.wpsetting"
+        echo '' > ${folderPath}/${wordpressSettingFileName}
+        
+        # find all working subsite wordpress installations config files
         wordpressConfigFiles=$(ls -x ./*/wp-config.php)
-        for configFile in $wordpressConfigFiles; do
+        
+        # for each wordpress install
+        for configFile in ${wordpressConfigFiles}; do
+            
             wordpressFolder=$( echo "${configFile%/*}" | sed s/^[[:space:]]*[./]*// )
-            fileRef="${url}-${wordpressFolder}"
+
+            # get wordpress database access settings
+            dbName=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_NAME' | sed -e "s/.*,[[:space:]]*'\(.*\)'.*/\1/" )
+            dbUser=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_USER' | sed -e "s/.*,[[:space:]]*'\(.*\)'.*/\1/" )
+            dbPass=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_PASSWORD' | sed -e "s/.*,[[:space:]]*'\(.*\)'.*/\1/" )
+            dbHost=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_HOST' | sed -e "s/.*,[[:space:]]*'\(.*\)'.*/\1/" )
+            tablePrefix=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'table_prefix' | sed -e "s/.*=[[:space:]]*'\(.*\)'.*/\1/" )
+
+            # make db dump file path
             date=`date +%Y-%m-%d`
-            fileName="${fileRef}--${date}.sql"
+            fileName="${url}-${dbName}--${date}.sql"
             filePath="${folderPath}/${fileName}"
+
+            # add wordpress database settings into the wordpress setting file
+            echo "[${wordpressFolder}]" >> ${folderPath}/${wordpressSettingFileName}
+            echo "fileName=${filePath%.sql}.tar.gz" >> ${folderPath}/${wordpressSettingFileName}
+            echo "dbName=${dbName}" >> ${folderPath}/${wordpressSettingFileName}
+            echo "tablePrefix=${tablePrefix}" >> ${folderPath}/${wordpressSettingFileName}
+
+            # dump database if not already done
             if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
                 if [ ! -e "${filePath}.lock" ] ; then
-                    dbName=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_NAME' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
-                    dbUser=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_USER' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
-                    dbPass=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_PASSWORD' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
-                    dbHost=$( sed -e 's/[#].*$//' <  ${configFile}  | grep 'DB_HOST' | sed -e "s/.*,[[:space:]]'\(.*\)'.*/\1/" )
                     touch "${filePath}.lock" &&
                     mysqldump -h ${dbHost} -u${dbUser} -p${dbPass} ${dbName} > ${filePath} &&
                     tar -czf "${filePath%.sql}.tar.gz" --directory ${folderPath} ${fileName}
@@ -245,6 +296,7 @@ if [ "${siteRootTest}" != "true" ] ; then
                     rm ${filePath}
                 fi
             fi
+
         done
     fi
 fi

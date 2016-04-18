@@ -8,6 +8,8 @@ Bash will fetch a magento database from a group of your dev sites automatically 
 - add a new server to download list by running addNewSiteToList.sh
 - to run full program program run the getAllDatabase.sh, I suggest a cron for this
 - the databases will be in compressed files in a databases folder created where you put the bash files
+- if you want a site to dump a database without the rewrites table add the line below in the sites.ini file
+  truncateRewrites = true
 
 ###Removing sites from list
 Just remove the site's settings from the sites.ini file
@@ -17,8 +19,15 @@ Just remove the site's settings from the sites.ini file
 - compressed databases are left in a /tmp/databases folder on the dev servers, but only one of each and this folder is emptied each time the script runs
 - the document root may not always be found automatically. If you run the addNewSiteToList.sh script it will inform you of this and ask for a document root.
 - requires ssh-copy-id for adding key to server if its not already there
+- only works for 1.x versions of magento as far as i know
 
-###notes
+###Test a single site
+getAllDatabase.sh <<site name defined in sites.ini>>
+e.g. getAllDatabase.sh example
+
+note: the site name is found in the sites.ini file between the [] above the site info
+
+###Notes
 Outputs like the below from the db dump script is nothing to worry about. Its n98-magerun.phar falling back  to the /tmp/magento/var folder as your magento system is using that instead of the standard of the var folder inside you web document root
 ```Fallback folder /tmp/magento/var is used in n98-magerun
 

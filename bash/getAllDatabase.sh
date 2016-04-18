@@ -2,6 +2,11 @@
 outputFolder="databases"
 configFile="sites.ini";
 
+if [ ! -z "${1}"  ] ; then
+    testSectionName="${1}" # the name of the site to test in [] from the sites.ini file
+    echo "testing for ${1}"
+fi
+
 # script location
 scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # make paths relative to script
@@ -24,7 +29,12 @@ else
     fi
 fi
 
-_SECTIONS=`cat ${configFile} | grep -o -P "\[([a-zA-Z0-9-._ ]+)\]" | tr -d [] | sed ':a;N;$!ba;s/\n/ /g'`
+
+if [ -z "${testSectionName}" ]; then
+    _SECTIONS=`cat ${configFile} | grep -o -P "\[([a-zA-Z0-9-._ ]+)\]" | tr -d [] | sed ':a;N;$!ba;s/\n/ /g'`
+else
+    _SECTIONS="${testSectionName}"
+fi
 
 ini_parser() {
     FILE=$1
@@ -49,13 +59,24 @@ for SEC in $_SECTIONS; do
 
 	catScript=$(cat ${scriptDir}/dumpMagentoDatabase.sh)
 
+    if [ "${truncateRewrites}" = "true" ]; then
+        _truncateRewrites="&& truncateRewrites=true"
+        echo 'ignoring rewrites table'
+    fi
+
     echo 'creating databases'
 	if [ -z ${docRoot} ] ; then
-		sshReply=$( ssh ${siteLogin} "url=${host} && ${catScript}" )
+		sshReply=$( ssh ${siteLogin} "url=${host} $_truncateRewrites && ${catScript}" )
 	else
-		sshReply=$( ssh ${siteLogin} "url=${host} && magentoPath=${docRoot} && ${catScript}" )
+		sshReply=$( ssh ${siteLogin} "url=${host} $_truncateRewrites && magentoPath=${docRoot} && ${catScript}" )
 		unset docRoot
 	fi
+
+
+#	# debug code, for testing remote server code
+#	echo '-----------------------'
+#	echo ${sshReply}
+#	echo '-----------------------'
 
 	sshReplyLastLine=$( echo "${sshReply}" | sed -e '$!d')
     if [ "$sshReplyLastLine" = "Finished" ] ; then
@@ -63,10 +84,10 @@ for SEC in $_SECTIONS; do
             mkdir -p ${outputFolder}
         else
             if ls ${outputFolder}/${host}*tar.gz 1> /dev/null 2>&1; then
-                echo "removing old files from ${outputFolder}"
+                echo "removing old files for ${host} site from ${outputFolder}"
                 rm ${outputFolder}/${host}*tar.gz
             else
-                echo "${outputFolder} is empty"
+                echo "no need to empty ${outputFolder}, it dosnt have any files from ${host}"
             fi
         fi
         if [ ! -w "${outputFolder}" ] ; then
@@ -76,8 +97,9 @@ for SEC in $_SECTIONS; do
         echo downloading
         rsync -ahz ${siteLogin}:/tmp/databases/* ${outputFolder}
     else
-        errors="${errors}\n${url}: ${sshReplyLastLine}"
+        echo "${sshReplyLastLine}"
+        errors="${host}: ${sshReplyLastLine}"
+        printf "${errors}\n" >> ${scriptDir}/dbDumpErrors.log
     fi
 done
 
-printf "${errors}" > ${scriptDir}/dbDumpErrors.log
