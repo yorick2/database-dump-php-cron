@@ -72,6 +72,12 @@ for SEC in $_SECTIONS; do
 		unset docRoot
 	fi
 
+
+#	# debug code, for testing remote server code
+#	echo '-----------------------'
+#	echo ${sshReply}
+#	echo '-----------------------'
+
 	sshReplyLastLine=$( echo "${sshReply}" | sed -e '$!d')
     if [ "$sshReplyLastLine" = "Finished" ] ; then
         if [ ! -d "${outputFolder}" ] ; then
@@ -91,8 +97,9 @@ for SEC in $_SECTIONS; do
         echo downloading
         rsync -ahz ${siteLogin}:/tmp/databases/* ${outputFolder}
     else
-        errors="${errors}\n${url}: ${sshReplyLastLine}"
-        printf "${errors}" >> ${scriptDir}/dbDumpErrors.log
+        echo "${sshReplyLastLine}"
+        errors="${host}: ${sshReplyLastLine}"
+        printf "${errors}\n" >> ${scriptDir}/dbDumpErrors.log
     fi
 done
 
