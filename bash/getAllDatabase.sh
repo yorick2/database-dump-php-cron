@@ -48,6 +48,8 @@ ini_parser() {
     | sed -n -e "/^\[$SECTION\]/I,/^\s*\[/{/^[^;].*\=.*/p;}")
 }
 
+# remove old log file
+rm ${scriptDir}/dbDumpErrors.log
 
 # A sections array that we'll loop through
 for SEC in $_SECTIONS; do
@@ -57,6 +59,7 @@ for SEC in $_SECTIONS; do
 
 	siteLogin="${user}@${host}"
 
+    # get contents of script to run on remote server
 	catScript=$(cat ${scriptDir}/dumpMagentoDatabase.sh)
 
     if [ "${truncateRewrites}" = "true" ]; then
@@ -64,6 +67,7 @@ for SEC in $_SECTIONS; do
         echo 'ignoring rewrites table'
     fi
 
+    # send command to remote server via ssh
     echo 'creating databases'
 	if [ -z ${docRoot} ] ; then
 		sshReply=$( ssh ${siteLogin} "url=${host} $_truncateRewrites && ${catScript}" )
@@ -79,10 +83,12 @@ for SEC in $_SECTIONS; do
 #	echo '-----------------------'
 
 	sshReplyLastLine=$( echo "${sshReply}" | sed -e '$!d')
+    # if finished successfully get new database
     if [ "$sshReplyLastLine" = "Finished" ] ; then
         if [ ! -d "${outputFolder}" ] ; then
             mkdir -p ${outputFolder}
         else
+            # remove old database if exists
             if ls ${outputFolder}/${host}*tar.gz 1> /dev/null 2>&1; then
                 echo "removing old files for ${host} site from ${outputFolder}"
                 rm ${outputFolder}/${host}*tar.gz
@@ -97,7 +103,9 @@ for SEC in $_SECTIONS; do
         echo downloading
         rsync -ahz ${siteLogin}:/tmp/databases/* ${outputFolder}
     else
+        # echo error
         echo "${sshReplyLastLine}"
+        # print error into log file
         errors="${host}: ${sshReplyLastLine}"
         printf "${errors}\n" >> ${scriptDir}/dbDumpErrors.log
     fi

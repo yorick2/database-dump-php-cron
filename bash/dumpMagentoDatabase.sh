@@ -224,8 +224,16 @@ if [ "${siteRootTest}" != "true" ] ; then
     n98Location=""
     if [ -z "${n98Reply}" ] ; then
         n98Location="/tmp/"
+        # if ${n98Location}n98-magerun.phar not executable
         if [ ! -x ${n98Location}n98-magerun.phar ] ; then
-            echo "attempting to install n98"
+            echo "attempting to install n98 in /tmp folder"
+            wget http://files.magerun.net/n98-magerun-latest.phar -O ${n98Location}n98-magerun.phar &&
+            chmod +x ${n98Location}n98-magerun.phar &&
+            echo "installed n98 successfully"
+        fi
+        if [ ! -x ${n98Location}n98-magerun.phar ] ; then
+            n98Location="${userDir}/"
+            echo "attempting to install n98 in user folder"
             wget http://files.magerun.net/n98-magerun-latest.phar -O ${n98Location}n98-magerun.phar &&
             chmod +x ${n98Location}n98-magerun.phar &&
             echo "installed n98 successfully"
