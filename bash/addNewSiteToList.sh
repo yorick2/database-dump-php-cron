@@ -35,7 +35,7 @@ if [ "${random}" = "1" ] ; then
        echo "Auuuuuuuugh"
        exit
    else
-       echo "How do know so much about swallows?"
+       echo "How do you know so much about swallows?"
    fi
 fi
 
