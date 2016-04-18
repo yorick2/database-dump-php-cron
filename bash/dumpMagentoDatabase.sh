@@ -71,15 +71,24 @@ if [ -z ${magentoPath} ]; then
     isApache=$(top -b -n 1|grep apache)
     # if apache
     if [ ! -z "${isApache}" ]; then
-    	apacheConfDir='/etc/apache2/sites-enabled'
-    	if [ -d "${apacheConfDir}" ] ; then
-			apacheConfFile=$( grep --files-with-matches "^${s}*ServerName${s}*${url}[${sp};]*$" ${apacheConfDir}/* )
-        else
-        	apacheConfDir='/etc/apache2/extra'
-	        if [ -d "${apacheConfDir}" ] ; then
-			    apacheConfFile=$( grep --files-with-matches "^${s}*ServerName${s}*${url}[${sp};]$" ${apacheConfDir}/* )
-	        fi
+
+        # find apache directory
+    	apacheConfDir1='/etc/apache2/sites-enabled'
+        apacheConfDir2='/etc/apache2/extra'
+    	apacheConfDir3='/etc/httpd/sites-enabled'
+        apacheConfDir4='/etc/httpd/extra'
+    	if [ -d "${apacheConfDir1}" ] ; then
+			apacheConfDir="${apacheConfDir1}"
+        elif [ -d "${apacheConfDir2}" ] ; then
+	        apacheConfDir="${apacheConfDir2}"
+	    elif [ -d "${apacheConfDir3}" ] ; then
+	        apacheConfDir="${apacheConfDir3}"
+	    elif [ -d "${apacheConfDir4}" ] ; then
+	        apacheConfDir="${apacheConfDir4}"
 	    fi
+	    # find apache config file
+        apacheConfFile=$( grep --files-with-matches "^${s}*ServerName${s}*${url}[${sp};]*$" ${apacheConfDir}/* )
+
 	    echo "using this apache conf file: ${apacheConfFile}"
         if [ "${#apacheConfFile[@]}" = "1" ] ; then # check if desired no of files
 			if [ ! -z "${apacheConfFile}" ]; then  # line needed to check not empty array of length 1
@@ -194,7 +203,10 @@ if [ "${siteRootTest}" != "true" ] ; then
 
     # set the truncate table list
     if [ "${truncateRewrites}" = "true" ] ; then
-        truncateTablesList='core_url_rewrite @development';
+        truncateTablesList='enterprise_url_rewrite_redirect_rewrite enterprise_url_rewrite_redirect_cl \
+        enterprise_url_rewrite_redirect enterprise_url_rewrite_product_cl enterprise_url_rewrite_category_cl \
+        enterprise_url_rewrite enterprise_catalog_product_rewrite enterprise_catalog_category_rewrite \
+        core_url_rewrite @development';
         echo "truncateTableList = ${truncateTablesList}"
     else
         truncateTablesList='@development';
@@ -224,8 +236,16 @@ if [ "${siteRootTest}" != "true" ] ; then
     n98Location=""
     if [ -z "${n98Reply}" ] ; then
         n98Location="/tmp/"
+        # if ${n98Location}n98-magerun.phar not executable
         if [ ! -x ${n98Location}n98-magerun.phar ] ; then
-            echo "attempting to install n98"
+            echo "attempting to install n98 in /tmp folder"
+            wget http://files.magerun.net/n98-magerun-latest.phar -O ${n98Location}n98-magerun.phar &&
+            chmod +x ${n98Location}n98-magerun.phar &&
+            echo "installed n98 successfully"
+        fi
+        if [ ! -x ${n98Location}n98-magerun.phar ] ; then
+            n98Location="${userDir}/"
+            echo "attempting to install n98 in user folder"
             wget http://files.magerun.net/n98-magerun-latest.phar -O ${n98Location}n98-magerun.phar &&
             chmod +x ${n98Location}n98-magerun.phar &&
             echo "installed n98 successfully"
