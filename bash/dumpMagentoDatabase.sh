@@ -194,7 +194,10 @@ if [ "${siteRootTest}" != "true" ] ; then
 
     # set the truncate table list
     if [ "${truncateRewrites}" = "true" ] ; then
-        truncateTablesList='core_url_rewrite @development';
+        truncateTablesList='enterprise_url_rewrite_redirect_rewrite enterprise_url_rewrite_redirect_cl \
+        enterprise_url_rewrite_redirect enterprise_url_rewrite_product_cl enterprise_url_rewrite_category_cl \
+        enterprise_url_rewrite enterprise_catalog_product_rewrite enterprise_catalog_category_rewrite \
+        core_url_rewrite @development';
         echo "truncateTableList = ${truncateTablesList}"
     else
         truncateTablesList='@development';

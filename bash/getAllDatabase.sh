@@ -49,7 +49,9 @@ ini_parser() {
 }
 
 # remove old log file
-rm ${scriptDir}/dbDumpErrors.log
+if [ -w ${scriptDir}/dbDumpErrors.log ]; then
+    rm ${scriptDir}/dbDumpErrors.log
+fi
 
 # A sections array that we'll loop through
 for SEC in $_SECTIONS; do
