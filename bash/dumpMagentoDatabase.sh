@@ -71,15 +71,24 @@ if [ -z ${magentoPath} ]; then
     isApache=$(top -b -n 1|grep apache)
     # if apache
     if [ ! -z "${isApache}" ]; then
-    	apacheConfDir='/etc/apache2/sites-enabled'
-    	if [ -d "${apacheConfDir}" ] ; then
-			apacheConfFile=$( grep --files-with-matches "^${s}*ServerName${s}*${url}[${sp};]*$" ${apacheConfDir}/* )
-        else
-        	apacheConfDir='/etc/apache2/extra'
-	        if [ -d "${apacheConfDir}" ] ; then
-			    apacheConfFile=$( grep --files-with-matches "^${s}*ServerName${s}*${url}[${sp};]$" ${apacheConfDir}/* )
-	        fi
+
+        # find apache directory
+    	apacheConfDir1='/etc/apache2/sites-enabled'
+        apacheConfDir2='/etc/apache2/extra'
+    	apacheConfDir3='/etc/httpd/sites-enabled'
+        apacheConfDir4='/etc/httpd/extra'
+    	if [ -d "${apacheConfDir1}" ] ; then
+			apacheConfDir="${apacheConfDir1}"
+        elif [ -d "${apacheConfDir2}" ] ; then
+	        apacheConfDir="${apacheConfDir2}"
+	    elif [ -d "${apacheConfDir3}" ] ; then
+	        apacheConfDir="${apacheConfDir3}"
+	    elif [ -d "${apacheConfDir4}" ] ; then
+	        apacheConfDir="${apacheConfDir4}"
 	    fi
+	    # find apache config file
+        apacheConfFile=$( grep --files-with-matches "^${s}*ServerName${s}*${url}[${sp};]*$" ${apacheConfDir}/* )
+
 	    echo "using this apache conf file: ${apacheConfFile}"
         if [ "${#apacheConfFile[@]}" = "1" ] ; then # check if desired no of files
 			if [ ! -z "${apacheConfFile}" ]; then  # line needed to check not empty array of length 1
