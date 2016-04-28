@@ -1,7 +1,7 @@
 # muliple-external-magento-database-download
 
 ## bash
-Bash will fetch a magento database from a group of your dev sites automatically removing old ones, so it can be fired nightly by a cron. Also for each site it will detect Wordpress sites directly in folders inside the magento website root (e.g. htdocs/blog)
+Bash will fetch a Magento 1 or Magento 2 or Wordpress database from a group of your dev sites automatically removing old ones, so it can be fired nightly by a cron. Also for each site it will detect Wordpress sites directly in folders inside the magento website root (e.g. htdocs/blog). 
 
 ### Installation
 - add all the files in the bash folder onto your database storage server, no files need to go onto the dev server
@@ -27,7 +27,7 @@ Just remove the site's settings from the sites.ini file, unfortunately currently
 - compressed databases are left in a /tmp/databases folder on the dev servers, but only one of each and this folder is emptied each time the script runs
 - the document root may not always be found automatically. If you run the addNewSiteToList.sh script it will inform you of this and ask for a document root.
 - requires ssh-copy-id for adding key to server if its not already there
-- only tested for 1.x versions of magento. It uses n98-magerun to dump the magento databases, so if the magento 2 version of n98-magerun is installed globally on the dev server there should be no issue.
+- Magento 2 databases cant use the truncate rewrites option as database structure may have changed 
 
 
 ### Test a single site
