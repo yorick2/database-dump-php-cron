@@ -202,8 +202,7 @@ if [ "${siteRootTest}" != "true" ] ; then
     filePath="${folderPath}/${fileName}"
 
     # if magento 2
-    magento2Shell=$(bin/magento)
-    if [ ! -z "$magento2Shell" ] ; then
+    if [  -e bin/magento ] ; then
         isMagento2="true"
     fi
 
