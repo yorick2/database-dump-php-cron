@@ -314,7 +314,7 @@ if [ "${siteRootTest}" != "true" ] ; then
         echo "wordpress=true"   ###--delete me
         
         # create empty wordpress setting file
-        wordpressSettingFileName="${url}.wpsetting"
+        wordpressSettingFileName="${url}-wpsetting.txt"
         echo '' > ${folderPath}/${wordpressSettingFileName}
         
         # find all working subsite wordpress installations config files
