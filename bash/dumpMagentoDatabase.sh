@@ -66,7 +66,9 @@ s='[[:space:]]'
 eval userDir=~$(whoami); # get user folder location
 
 ##### get web folder ####
-if [ -z ${magentoPath} ]; then
+if [ -z "${magentoPath}" ]; then
+    echo 'searching for magento path'
+
     isNginx=$(top -b -n 1|grep nginx)
     isApache=$(top -b -n 1|grep apache)
     # if apache
@@ -201,6 +203,11 @@ if [ "${siteRootTest}" != "true" ] ; then
     fileName="${fileRef}--${date}.sql"
     filePath="${folderPath}/${fileName}"
 
+    # if magento 1
+    if [ -a app/etc/local.xml ] ; then
+        isMagento1="true"
+    fi
+
     # if magento 2
     if [  -e bin/magento ] ; then
         isMagento2="true"
@@ -236,67 +243,82 @@ if [ "${siteRootTest}" != "true" ] ; then
         fi
     fi
 
-    # install n98 dependata
-    if [ "$isMagento2" = "true" ] ; then
-         # if n98 not installed, install it
+    # install n98
+    if [ "${isMagento2}" = "true" ] ; then
+        echo 'searching for Magento 2 n98'
+        # if n98 not installed, install it
         n98Reply=$(n98-magerun2.phar)
         n98Location=""
         if [ -z "${n98Reply}" ] ; then
             n98Location="/tmp/"
             # if ${n98Location}n98-magerun.phar not executable
-            if [ ! -x ${n98Location}n98-magerun2.phar ] ; then
+            if [ ! -x "${n98Location}n98-magerun2.phar" ] ; then
                 echo "attempting to install n98 in /tmp folder"
                 wget https://files.magerun.net/n98-magerun2.phar -O ${n98Location}n98-magerun2.phar &&
                 chmod +x ${n98Location}n98-magerun2.phar &&
                 echo "installed n98 successfully"
             fi
-            if [ ! -x ${n98Location}n98-magerun.phar ] ; then
+            # if still cant run from /tmp folder
+            if [ ! -x "${n98Location}n98-magerun.phar" ] ; then
                 n98Location="${userDir}/"
-                echo "attempting to install n98 in user folder"
-                wget https://files.magerun.net/n98-magerun2.phar -O ${n98Location}n98-magerun2.phar &&
-                chmod +x ${n98Location}n98-magerun2.phar &&
-                echo "installed n98 successfully"
+                if [ ! -x "${n98Location}n98-magerun.phar" ] ; then
+                    echo "attempting to install n98 in user folder"
+                    wget https://files.magerun.net/n98-magerun2.phar -O ${n98Location}n98-magerun2.phar &&
+                    chmod +x ${n98Location}n98-magerun2.phar &&
+                    echo "installed n98 successfully"
+                else
+                    echo "using n98 in user folder"
+                fi
             fi
         fi
     else
-        # if n98 not installed, install it
-        n98Reply=$(n98-magerun.phar)
-        n98Location=""
-        if [ -z "${n98Reply}" ] ; then
-            n98Location="/tmp/"
-            # if ${n98Location}n98-magerun.phar not executable
-            if [ ! -x ${n98Location}n98-magerun.phar ] ; then
-                echo "attempting to install n98 in /tmp folder"
-                wget http://files.magerun.net/n98-magerun-latest.phar -O ${n98Location}n98-magerun.phar &&
-                chmod +x ${n98Location}n98-magerun.phar &&
-                echo "installed n98 successfully"
-            fi
-            if [ ! -x ${n98Location}n98-magerun.phar ] ; then
-                n98Location="${userDir}/"
-                echo "attempting to install n98 in user folder"
-                wget http://files.magerun.net/n98-magerun-latest.phar -O ${n98Location}n98-magerun.phar &&
-                chmod +x ${n98Location}n98-magerun.phar &&
-                echo "installed n98 successfully"
+        if [ "${isMagento1}" = "true" ] ; then
+            echo 'searching for Magento 2 n98'
+            # if n98 not installed, install it
+            n98Reply=$(n98-magerun.phar)
+            n98Location=""
+            if [ -z "${n98Reply}" ] ; then
+                n98Location="/tmp/"
+                # if ${n98Location}n98-magerun.phar not executable
+                if [ ! -x "${n98Location}n98-magerun.phar" ] ; then
+                    echo "attempting to install n98 in /tmp folder"
+                    wget http://files.magerun.net/n98-magerun-latest.phar -O ${n98Location}n98-magerun.phar &&
+                    chmod +x ${n98Location}n98-magerun.phar &&
+                    echo "installed n98 successfully"
+                fi
+                if [ ! -x "${n98Location}n98-magerun.phar" ] ; then
+                    n98Location="${userDir}/"
+                    if [ ! -x "${n98Location}n98-magerun.phar" ] ; then
+                        echo "attempting to install n98 in user folder"
+                        wget http://files.magerun.net/n98-magerun-latest.phar -O ${n98Location}n98-magerun.phar &&
+                        chmod +x ${n98Location}n98-magerun.phar &&
+                        echo "installed n98 successfully"
+                    else
+                        echo "using n98 in user folder"
+                    fi
+                fi
             fi
         fi
     fi
 
-    # n98 db dump if dosnt exist
-    if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
-        if [ ! -e "${filePath}.lock" ] ; then
-            touch "${filePath}.lock" &&
-            if [ "$isMagento2" = "true" ] ; then
-                ${n98Location}n98-magerun2.phar db:dump --strip="${truncateTablesList}" ${filePath}
-            else
-                ${n98Location}n98-magerun.phar db:dump --strip="${truncateTablesList}" ${filePath}
-            fi &&
-            tar -czf "${filePath%.sql}.tar.gz" --directory ${folderPath} ${fileName}
-            ####### DONT TOUCH HERE ######
-            if [ ! -z "${filePath}" ] ; then  #### DONT TOUCH #### only run if variable still set ####
-                rm -f "${filePath}.lock"
-                rm ${filePath%.sql}.sql  #### DONT TOUCH #### makes sure it only deletes sql files if anything goes wrong, by removing and adding .sql to the end
+    if [ "$isMagento1" = "true" ] || [ "$isMagento2" = "true" ] ; then
+        # n98 db dump if dosnt exist
+        if [ ! -a "${filePath%.sql}.tar.gz" ] ; then
+            if [ ! -e "${filePath}.lock" ] ; then
+                touch "${filePath}.lock" &&
+                if [ "$isMagento2" = "true" ] ; then
+                    ${n98Location}n98-magerun2.phar db:dump --strip="${truncateTablesList}" ${filePath}
+                else
+                    ${n98Location}n98-magerun.phar db:dump --strip="${truncateTablesList}" ${filePath}
+                fi &&
+                tar -czf "${filePath%.sql}.tar.gz" --directory ${folderPath} ${fileName}
+                ####### DONT TOUCH HERE ######
+                if [ ! -z "${filePath}" ] ; then  #### DONT TOUCH #### only run if variable still set ####
+                    rm -f "${filePath}.lock"
+                    rm ${filePath%.sql}.sql  #### DONT TOUCH #### makes sure it only deletes sql files if anything goes wrong, by removing and adding .sql to the end
+                fi
+                ##############################
             fi
-            ##############################
         fi
     fi
 
@@ -307,7 +329,12 @@ if [ "${siteRootTest}" != "true" ] ; then
         echo "wordpress subsite found"
         hasWordpress="true"
     else
-        echo "no wordpress subsite found"
+        if ls ./wp-config.php 1> /dev/null 2>&1; then
+            echo "wordpress site found"
+            hasWordpress="true"
+        else
+            echo "no wordpress subsite found"
+        fi
     fi
     # dump all wordpress databases
     if [ "${hasWordpress}" = "true" ] ; then
@@ -318,8 +345,12 @@ if [ "${siteRootTest}" != "true" ] ; then
         echo '' > ${folderPath}/${wordpressSettingFileName}
         
         # find all working subsite wordpress installations config files
-        wordpressConfigFiles=$(ls -x ./wp-config.php)
-        wordpressConfigFiles+=$(ls -x ./*/wp-config.php)
+        if ls ./wp-config.php 1> /dev/null 2>&1; then
+            wordpressConfigFiles=$(ls -x ./wp-config.php)
+        fi
+        if ls ./*/wp-config.php 1> /dev/null 2>&1; then
+            wordpressConfigFiles+=$(ls -x ./*/wp-config.php)
+        fi
         
         # for each wordpress install
         for configFile in ${wordpressConfigFiles}; do
