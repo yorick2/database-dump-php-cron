@@ -256,7 +256,9 @@ if [ "${siteRootTest}" != "true" ] ; then
                 echo "attempting to install n98 in /tmp folder"
                 wget https://files.magerun.net/n98-magerun2.phar -O ${n98Location}n98-magerun2.phar &&
                 chmod +x ${n98Location}n98-magerun2.phar &&
-                echo "installed n98 successfully"
+                echo "installed n98 in /tmp folder"
+            else
+                echo "n98 found in /tmp"
             fi
             # if still cant run from /tmp folder
             if [ ! -x "${n98Location}n98-magerun.phar" ] ; then
