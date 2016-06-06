@@ -130,7 +130,7 @@ if [ "${testDownload}" = "y" ] ; then
                 echo "removing old files from ${outputFolder}"
                 rm ${outputFolder}/${host}*tar.gz
             else
-                echo "${outputFolder} is empty"
+                echo "${outputFolder} has no databases from this url"
             fi
         fi
         if [ ! -w "${outputFolder}" ] ; then
