@@ -25,9 +25,9 @@ Just remove the site's settings from the sites.ini file, unfortunately currently
 ### Limitations
 - For automatic fetching document root location nginx sites-enabled files cant have server_name or root stated on the same line as something else
 - compressed databases are left in a /tmp/databases folder on the dev servers, but only one of each and this folder is emptied each time the script runs
-- the document root may not always be found automatically. If you run the addNewSiteToList.sh script it will inform you of this and ask for a document root.
+- the document root may not always be found automatically. If you run the addNewSiteToList.sh script it will inform you of this and ask for a document root
 - requires ssh-copy-id for adding key to server if its not already there
-- Magento 2 databases cant use the truncate rewrites option as database structure may have changed 
+- the dev sites you are fetching the databases from must allow access on port 22 for the user you set
 
 
 ### Test a single site
