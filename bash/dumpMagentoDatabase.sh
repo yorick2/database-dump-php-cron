@@ -192,6 +192,17 @@ if [ -z "${magentoPath}" ]; then
     fi
 fi
 
+# if db folder dosnt exist create it
+if [ ! -d "${folderPath}" ] ; then
+    mkdir -p "${folderPath}"
+fi
+
+# empty db folder of tar.gz files
+if [ ! -w "${folderPath}" ] ; then
+    echo "${folderPath} tmp folder is not writable"
+    exit
+fi
+
 if [ "${siteRootTest}" != "true" ] ; then
     # replace ~ with user folder
     magentoPath="${magentoPath/\~/${userDir}}"
@@ -225,16 +236,8 @@ if [ "${siteRootTest}" != "true" ] ; then
         echo "truncateTableList = ${truncateTablesList}"
     fi
 
-    # if db folder dosnt exist create it
-    if [ ! -d "${folderPath}" ] ; then
-        mkdir -p "${folderPath}"
-    fi
-
     # empty db folder of tar.gz files
-    if [ ! -w "${folderPath}" ] ; then
-        echo "${folderPath} is not writable"
-        exit
-    else
+    if [ -w "${folderPath}" ] ; then
         if ls ${folderPath}/${url}*.tar.gz 1> /dev/null 2>&1; then
             echo "removing old files from ${folderPath}"
             rm ${folderPath}/${url}*.tar.gz

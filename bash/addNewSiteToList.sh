@@ -94,19 +94,31 @@ if [ !  -z "${greppedSshReply}" ] ; then
 else
     echo ${sshReply} | grep -oe "magentoPath[[:space:]]*=[[:space:]]*[^[:space:]]*"
 fi
+if [ ! -z ${docRoot} ]; then
+    _docRoot="&& magentoPath=${docRoot} "
+fi
+
+greppedSshReply=$( ssh ${siteLogin} "url=${host} ${_docRoot} && siteRootTest=true && ${catScript}" | grep "tmp folder is not writable")
+if [ !  -z "${greppedSshReply}" ] ; then
+    echo 'standard tmp folder not writable'
+    echo 'please provide a location on the remote dev server to dump the databases'
+    read remoteTmpLocation
+fi
+if [ ! -z ${remoteTmpLocation} ]; then
+    _tmpFolder="&& folderPath=${remoteTmpLocation} "
+fi
+
+
+
 
 echo "test download? (y/n)"
 read testDownload
 if [ "${testDownload}" = "y" ] ; then
     echo "running test download"
 
+    # send command to remote server via ssh
     echo 'creating databases'
-	if [ -z ${docRoot} ] ; then
-		sshReply=$( ssh ${siteLogin} "url=${host} && ${catScript}" )
-	else
-		sshReply=$( ssh ${siteLogin} "url=${host} && magentoPath=${docRoot} && ${catScript}" )
-		unset docRoot
-	fi
+    sshReply=$( ssh ${siteLogin} "url=${host} ${_tmpFolder} ${_docRoot} && ${catScript}" )
 
     sshReplyLastLine=$( echo "${sshReply}" | sed -e '$!d')
 
@@ -127,13 +139,16 @@ if [ "${testDownload}" = "y" ] ; then
         fi
         echo downloading
         rsyncReply=$(rsync -ahz ${siteLogin}:/tmp/databases/* ${outputFolder}  && echo "Done" )
-        if [ "${rsyncReply}" = "Done" ] ; then
-             echo "[${host}]" >> ${configFile}
-             echo "user = ${user}" >> ${configFile}
-             echo "host = ${host}" >> ${configFile}
-             if [ ! -z "${docRoot}" ] ; then
-                echo "docRoot = ${docRoot}" >> ${configFile}
-             fi
+        if [ "${rsyncReply}" = "Done" ] ; then 
+          echo "[${host}]" >> ${configFile}
+          echo "user = ${user}" >> ${configFile}
+          echo "host = ${host}" >> ${configFile}
+          if [ ! -z "${docRoot}" ] ; then
+              echo "docRoot = ${docRoot}" >> ${configFile}
+          fi
+          if [ ! -z "${remoteTmpLocation}" ] ; then
+              echo "tmpFolder = ${remoteTmpLocation}" >> ${configFile}
+          fi
         else
             echo "error: rsync failed"
         fi
@@ -142,12 +157,18 @@ if [ "${testDownload}" = "y" ] ; then
         echo ${errors}
         exit
     fi
+
+    unset docRoot
+    unset remoteTmpLocation
 else
     echo "[${host}]" >> ${configFile}
     echo "user = ${user}" >> ${configFile}
     echo "host = ${host}" >> ${configFile}
     if [ ! -z "${docRoot}" ] ; then
         echo "docRoot = ${docRoot}" >> ${configFile}
+    fi
+    if [ ! -z "${remoteTmpLocation}" ] ; then
+        echo "tmpFolder = ${remoteTmpLocation}" >> ${configFile}
     fi
 fi
 
