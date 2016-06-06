@@ -104,7 +104,7 @@ for SEC in $_SECTIONS; do
             exit
         fi
         echo downloading
-        rsync -ahz ${siteLogin}:/tmp/databases/* ${outputFolder}
+        rsync -ahz ${siteLogin}:${tmpFolder}/* ${outputFolder}
     else
         # echo error
         echo "${sshReplyLastLine}"

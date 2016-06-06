@@ -98,7 +98,7 @@ if [ ! -z ${docRoot} ]; then
     _docRoot="&& magentoPath=${docRoot} "
 fi
 
-greppedSshReply=$( ssh ${siteLogin} "url=${host} ${_docRoot} && siteRootTest=true && ${catScript}") ## | grep "tmp folder is not writable")
+greppedSshReply=$( ssh ${siteLogin} "url=${host} ${_docRoot} && siteRootTest=true && ${catScript}" | grep "tmp folder is not writable")
 echo ========================================
 echo ${greppedSshReply}
 echo ========================================
@@ -142,13 +142,16 @@ if [ "${testDownload}" = "y" ] ; then
         fi
         echo downloading
         rsyncReply=$(rsync -ahz ${siteLogin}:/tmp/databases/* ${outputFolder}  && echo "Done" )
-        if [ "${rsyncReply}" = "Done" ] ; then
-             echo "[${host}]" >> ${configFile}
-             echo "user = ${user}" >> ${configFile}
-             echo "host = ${host}" >> ${configFile}
-             if [ ! -z "${docRoot}" ] ; then
-                echo "docRoot = ${docRoot}" >> ${configFile}
-             fi
+        if [ "${rsyncReply}" = "Done" ] ; then 
+          echo "[${host}]" >> ${configFile}
+          echo "user = ${user}" >> ${configFile}
+          echo "host = ${host}" >> ${configFile}
+          if [ ! -z "${docRoot}" ] ; then
+              echo "docRoot = ${docRoot}" >> ${configFile}
+          fi
+          if [ ! -z "${remoteTmpLocation}" ] ; then
+              echo "tmpFolder = ${remoteTmpLocation}" >> ${configFile}
+          fi
         else
             echo "error: rsync failed"
         fi
