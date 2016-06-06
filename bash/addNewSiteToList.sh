@@ -99,9 +99,6 @@ if [ ! -z ${docRoot} ]; then
 fi
 
 greppedSshReply=$( ssh ${siteLogin} "url=${host} ${_docRoot} && siteRootTest=true && ${catScript}" | grep "tmp folder is not writable")
-echo ========================================
-echo ${greppedSshReply}
-echo ========================================
 if [ !  -z "${greppedSshReply}" ] ; then
     echo 'standard tmp folder not writable'
     echo 'please provide a location on the remote dev server to dump the databases'
