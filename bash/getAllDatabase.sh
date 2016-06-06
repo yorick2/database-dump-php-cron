@@ -69,15 +69,16 @@ for SEC in $_SECTIONS; do
         echo 'ignoring rewrites table'
     fi
 
+    if [ ! -z ${tmpFolder} ]; then
+        _tmpFolder="&& folderPath=${tmpFolder} "
+    fi
+    if [ ! -z ${docRoot} ]; then
+        _docRoot="&& magentoPath=${docRoot} "
+    fi
+
     # send command to remote server via ssh
     echo 'creating databases'
-	if [ -z ${docRoot} ] ; then
-		sshReply=$( ssh ${siteLogin} "url=${host} $_truncateRewrites && ${catScript}" )
-	else
-		sshReply=$( ssh ${siteLogin} "url=${host} $_truncateRewrites && magentoPath=${docRoot} && ${catScript}" )
-		unset docRoot
-	fi
-
+    sshReply=$( ssh ${siteLogin} "url=${host} ${_tmpFolder} ${_truncateRewrites} ${_docRoot} && ${catScript}" )
 
 #	# debug code, for testing remote server code
 #	echo '-----------------------'
@@ -111,5 +112,12 @@ for SEC in $_SECTIONS; do
         errors="${host}: ${sshReplyLastLine}"
         printf "${errors}\n" >> ${scriptDir}/dbDumpErrors.log
     fi
+
+    unset _truncateRewrites
+    unset docRoot
+    unset _docRoot
+    unset tmpFolder
+    unset _tmpFolder
+    unset errors
 done
 
