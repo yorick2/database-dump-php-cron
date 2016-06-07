@@ -104,21 +104,22 @@ if [ !  -z "${greppedSshReply}" ] ; then
     echo 'please provide a location on the remote dev server to dump the databases'
     read remoteTmpLocation
 fi
-if [ ! -z ${remoteTmpLocation} ]; then
-    _tmpFolder="&& folderPath=${remoteTmpLocation} "
-fi
-
-
-
 
 echo "test download? (y/n)"
 read testDownload
 if [ "${testDownload}" = "y" ] ; then
+
     echo "running test download"
 
+    if [ -z ${remoteTmpLocation} ]; then
+      remoteTmp="/tmp/databases/${host}"
+    else
+      remoteTmp="${remoteTmpLocation}"
+    fi
+    
     # send command to remote server via ssh
     echo 'creating databases'
-    sshReply=$( ssh ${siteLogin} "url=${host} ${_tmpFolder} ${_docRoot} && ${catScript}" )
+    sshReply=$( ssh ${siteLogin} "url=${host} && folderPath=${remoteTmp} ${_docRoot} && ${catScript}" )
 
     sshReplyLastLine=$( echo "${sshReply}" | sed -e '$!d')
 
@@ -138,10 +139,7 @@ if [ "${testDownload}" = "y" ] ; then
             exit
         fi
         echo downloading
-        if [ -z ${remoteTmpLocation} ]; then
-            remoteTmpLocation="/tmp/databases/${host}"
-        fi
-        rsyncReply=$(rsync -ahz ${siteLogin}:${remoteTmpLocation}/*.txt ${outputFolder}  && rsync -ahz ${siteLogin}:${remoteTmpLocation}/*.tar.gz ${outputFolder}  && echo "Done" )
+        rsyncReply=$(rsync -ahz ${siteLogin}:${remoteTmp}/*.txt ${outputFolder}  && rsync -ahz ${siteLogin}:${remoteTmp}/*.tar.gz ${outputFolder}  && echo "Done" )
         if [ "${rsyncReply}" = "Done" ] ; then 
           echo "[${host}]" >> ${configFile}
           echo "user = ${user}" >> ${configFile}
@@ -158,11 +156,10 @@ if [ "${testDownload}" = "y" ] ; then
     else
         errors="${errors}\n${host}: ${sshReplyLastLine}"
         echo ${errors}
+
         exit
     fi
 
-    unset docRoot
-    unset remoteTmpLocation
 else
     echo "[${host}]" >> ${configFile}
     echo "user = ${user}" >> ${configFile}
