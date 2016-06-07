@@ -69,9 +69,10 @@ for SEC in $_SECTIONS; do
         echo 'ignoring rewrites table'
     fi
 
-    if [ ! -z ${tmpFolder} ]; then
-        _tmpFolder="&& folderPath=${tmpFolder} "
+    if [ -z ${tmpFolder} ]; then
+        tmpFolder="/tmp/databases/${host}"
     fi
+    _tmpFolder="&& folderPath=${tmpFolder} "
     if [ ! -z ${docRoot} ]; then
         _docRoot="&& magentoPath=${docRoot} "
     fi
@@ -104,7 +105,8 @@ for SEC in $_SECTIONS; do
             exit
         fi
         echo downloading
-        rsync -ahz ${siteLogin}:${tmpFolder}/* ${outputFolder}
+        rsync -ahz ${siteLogin}:${tmpFolder}/*.tar.gz ${outputFolder}
+        rsync -ahz ${siteLogin}:${tmpFolder}/*.txt ${outputFolder}
     else
         # echo error
         echo "${sshReplyLastLine}"
