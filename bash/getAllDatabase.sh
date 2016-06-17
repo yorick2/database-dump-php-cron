@@ -1,6 +1,7 @@
 #!/bin/bash
 outputFolder="databases"
 configFile="sites.ini";
+numberBackups=7;
 
 if [ ! -z "${1}"  ] ; then
     testSectionName="${1}" # the name of the site to test in [] from the sites.ini file
@@ -107,6 +108,24 @@ for SEC in $_SECTIONS; do
         echo downloading
         rsync -ahz ${siteLogin}:${tmpFolder}/*.tar.gz ${outputFolder}
         rsync -ahz ${siteLogin}:${tmpFolder}/*.txt ${outputFolder}
+        fileRef="${host}-magento"
+        date=`date +%Y-%m-%d`;
+        magentoDbFileName="${fileRef}--${date}.tar.gz";
+        # check magento db file exists and has size > 0
+        if [ -s ${magentoDbFileName}] ]; then
+            COUNTER=${numberBackups};
+            rm ${tmpFolder}/backupFolder${COUNTER}/${host}*.tar.gz
+            rm ${tmpFolder}/backupFolder${COUNTER}/${host}*.txt
+            while [  ${COUNTER} -gt 1 ]; do
+                 mv ${tmpFolder}/backupFolder${COUNTER}/${host}*.tar.gz ${tmpFolder}/backupFolder${COUNTER-1}
+                 mv ${tmpFolder}/backupFolder${COUNTER}/${host}*.txt ${tmpFolder}/backupFolder${COUNTER-1}
+                 let COUNTER=${COUNTER}-1;
+            done
+            mv ${tmpFolder}/${host}*.tar.gz ${tmpFolder}/backupFolder1
+            mv ${tmpFolder}/${host}*.txt ${tmpFolder}/backupFolder1
+            mv ${tmpFolder}/backupFolder1/${host}*--${date}.tar.gz ${tmpFolder}
+            mv ${tmpFolder}/backupFolder1/${host}*--${date}.txt ${tmpFolder}
+        fi
     else
         # echo error
         echo "${sshReplyLastLine}"
