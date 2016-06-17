@@ -92,14 +92,6 @@ for SEC in $_SECTIONS; do
     if [ "$sshReplyLastLine" = "Finished" ] ; then
         if [ ! -d "${outputFolder}" ] ; then
             mkdir -p ${outputFolder}
-        else
-            # remove old database if exists
-            if ls ${outputFolder}/${host}*tar.gz 1> /dev/null 2>&1; then
-                echo "removing old files for ${host} site from ${outputFolder}"
-                rm ${outputFolder}/${host}*tar.gz
-            else
-                echo "no need to empty ${outputFolder}, it dosnt have any files from ${host}"
-            fi
         fi
         if [ ! -w "${outputFolder}" ] ; then
             echo "${outputFolder} is not writable"
@@ -110,21 +102,46 @@ for SEC in $_SECTIONS; do
         rsync -ahz ${siteLogin}:${tmpFolder}/*.txt ${outputFolder}
         fileRef="${host}-magento"
         date=`date +%Y-%m-%d`;
-        magentoDbFileName="${fileRef}--${date}.tar.gz";
         # check magento db file exists and has size > 0
-        if [ -s ${magentoDbFileName}] ]; then
-            COUNTER=${numberBackups};
-            rm ${tmpFolder}/backupFolder${COUNTER}/${host}*.tar.gz
-            rm ${tmpFolder}/backupFolder${COUNTER}/${host}*.txt
-            while [  ${COUNTER} -gt 1 ]; do
-                 mv ${tmpFolder}/backupFolder${COUNTER}/${host}*.tar.gz ${tmpFolder}/backupFolder${COUNTER-1}
-                 mv ${tmpFolder}/backupFolder${COUNTER}/${host}*.txt ${tmpFolder}/backupFolder${COUNTER-1}
-                 let COUNTER=${COUNTER}-1;
-            done
-            mv ${tmpFolder}/${host}*.tar.gz ${tmpFolder}/backupFolder1
-            mv ${tmpFolder}/${host}*.txt ${tmpFolder}/backupFolder1
-            mv ${tmpFolder}/backupFolder1/${host}*--${date}.tar.gz ${tmpFolder}
-            mv ${tmpFolder}/backupFolder1/${host}*--${date}.txt ${tmpFolder}
+        if [ -s "${fileRef}--${date}.tar.gz"] ]; then
+            if [ ${numberBackups} -gt 0 ]; then
+                # check if multiple magento db's in the folder for this host
+                if ls ${tmpFolder}/${host}-*tar.gz 1> /dev/null 2>&1; then
+                    echo "moving backups"
+                    COUNTER=${numberBackups};
+                    rm ${tmpFolder}/backupFolder${COUNTER}/${host}*.tar.gz
+                    rm ${tmpFolder}/backupFolder${COUNTER}/${host}*.txt
+                    while [  ${COUNTER} -gt 1 ]; do
+                        sourceFolder=backupFolder$((${COUNTER}-1))
+			            destinationFolder=backupFolder${COUNTER}
+			            if [ ! -d "${tmpFolder}/${destinationFolder}" ] ; then
+                            mkdir -p ${tmpFolder}/${destinationFolder}
+                        fi
+                        if [ ! -w "${tmpFolder}/${destinationFolder}" ] ; then
+                            echo "${tmpFolder}/${destinationFolder} is not writable"
+                            exit
+                        fi
+                         mv ${tmpFolder}/${sourceFolder}/${host}*.tar.gz ${tmpFolder}/${destinationFolder}
+                         mv ${tmpFolder}/${sourceFolder}/${host}*.txt ${tmpFolder}/${destinationFolder}
+                         let COUNTER=${COUNTER}-1
+                    done
+
+	                if [ ! -d "${tmpFolder}/backupFolder1" ] ; then
+                        mkdir -p ${tmpFolder}/backupFolder1
+                    fi
+                    if [ ! -w "${tmpFolder}/backupFolder1" ] ; then
+                        echo "${tmpFolder}/backupFolder1 is not writable"
+                        exit
+                    fi
+
+	                # move todays and yesterdays files into backupFolder1
+                    mv ${tmpFolder}/${host}*.tar.gz ${tmpFolder}/backupFolder1
+                    mv ${tmpFolder}/${host}*.txt ${tmpFolder}/backupFolder1
+                    # move todays filest back
+           	    mv ${tmpFolder}/backupFolder1/${host}*${date}.tar.gz ${tmpFolder}
+                    mv ${tmpFolder}/backupFolder1/${host}*--${date}.txt ${tmpFolder}
+                fi
+            fi
         fi
     else
         # echo error
