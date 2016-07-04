@@ -103,11 +103,8 @@ for SEC in $_SECTIONS; do
         fileRef="${host}-magento"
         date=`date +%Y-%m-%d`;
         # check magento db file exists and has size > 0
-        echo '0'
         if [ -s "${outputFolder}/${fileRef}--${date}.tar.gz" ] ; then
-        echo '1'
             if [ ${numberBackups} -gt 0 ] ; then
-                echo '2'
                 # check if multiple magento db's in the folder for this host
                 if ls ${outputFolder}/${host}-*tar.gz 1> /dev/null 2>&1 ; then
 
