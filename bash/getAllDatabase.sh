@@ -103,43 +103,78 @@ for SEC in $_SECTIONS; do
         fileRef="${host}-magento"
         date=`date +%Y-%m-%d`;
         # check magento db file exists and has size > 0
-        if [ -s "${fileRef}--${date}.tar.gz"] ]; then
-            if [ ${numberBackups} -gt 0 ]; then
+        echo '0'
+        if [ -s "${outputFolder}/${fileRef}--${date}.tar.gz" ] ; then
+        echo '1'
+            if [ ${numberBackups} -gt 0 ] ; then
+                echo '2'
                 # check if multiple magento db's in the folder for this host
-                if ls ${tmpFolder}/${host}-*tar.gz 1> /dev/null 2>&1; then
+                if ls ${outputFolder}/${host}-*tar.gz 1> /dev/null 2>&1 ; then
+
                     echo "moving backups"
                     COUNTER=${numberBackups};
-                    rm ${tmpFolder}/backupFolder${COUNTER}/${host}*.tar.gz
-                    rm ${tmpFolder}/backupFolder${COUNTER}/${host}*.txt
+
+                    rmRegex=${outputFolder}/backupFolder${COUNTER}/${host}*.tar.gz
+                    if ls ${rmRegex} 1> /dev/null 2>&1 ; then
+                        rm ${rmRegex}
+                    fi
+                    rmRegex=${outputFolder}/backupFolder${COUNTER}/${host}*.txt
+                    if ls ${rmRegex} 1> /dev/null 2>&1 ; then
+                        rm ${rmRegex}
+                    fi
+
                     while [  ${COUNTER} -gt 1 ]; do
                         sourceFolder=backupFolder$((${COUNTER}-1))
 			            destinationFolder=backupFolder${COUNTER}
-			            if [ ! -d "${tmpFolder}/${destinationFolder}" ] ; then
-                            mkdir -p ${tmpFolder}/${destinationFolder}
+			            if [ ! -d "${outputFolder}/${destinationFolder}" ] ; then
+                            mkdir -p ${outputFolder}/${destinationFolder}
                         fi
-                        if [ ! -w "${tmpFolder}/${destinationFolder}" ] ; then
-                            echo "${tmpFolder}/${destinationFolder} is not writable"
+                        if [ ! -w "${outputFolder}/${destinationFolder}" ] ; then
+                            echo "${outputFolder}/${destinationFolder} is not writable"
                             exit
                         fi
-                         mv ${tmpFolder}/${sourceFolder}/${host}*.tar.gz ${tmpFolder}/${destinationFolder}
-                         mv ${tmpFolder}/${sourceFolder}/${host}*.txt ${tmpFolder}/${destinationFolder}
-                         let COUNTER=${COUNTER}-1
+                        mvRegex=${outputFolder}/${sourceFolder}/${host}*.tar.gz
+                        if ls ${mvRegex} 1> /dev/null 2>&1 ; then
+                            mv ${mvRegex} ${outputFolder}/${destinationFolder}
+                        fi
+                        mvRegex=${outputFolder}/${sourceFolder}/${host}*.txt
+                        if ls ${mvRegex} 1> /dev/null 2>&1 ; then
+                            mv ${mvRegex} ${outputFolder}/${destinationFolder}
+                        fi
+                        let COUNTER=${COUNTER}-1
                     done
 
-	                if [ ! -d "${tmpFolder}/backupFolder1" ] ; then
-                        mkdir -p ${tmpFolder}/backupFolder1
+	                if [ ! -d "${outputFolder}/backupFolder1" ] ; then
+	                    echo "mkdir -p ${outputFolder}/backupFolder1"
+                        mkdir -p ${outputFolder}/backupFolder1
                     fi
-                    if [ ! -w "${tmpFolder}/backupFolder1" ] ; then
-                        echo "${tmpFolder}/backupFolder1 is not writable"
+                    if [ ! -w "${outputFolder}/backupFolder1" ] ; then
+                        echo "${outputFolder}/backupFolder1 is not writable"
                         exit
                     fi
 
-	                # move todays and yesterdays files into backupFolder1
-                    mv ${tmpFolder}/${host}*.tar.gz ${tmpFolder}/backupFolder1
-                    mv ${tmpFolder}/${host}*.txt ${tmpFolder}/backupFolder1
+                    # move todays and yesterdays files into backupFolder1
+                    mvRegex=${outputFolder}/${host}*.tar.gz
+                    if ls ${mvRegex} 1> /dev/null 2>&1 ; then
+                        mv ${mvRegex} ${outputFolder}/backupFolder1
+                    fi
+                    mvRegex=${outputFolder}/${host}*.txt
+                    if ls ${mvRegex} 1> /dev/null 2>&1 ; then
+                        mv ${mvRegex} ${outputFolder}/backupFolder1
+                    fi
                     # move todays filest back
-           	    mv ${tmpFolder}/backupFolder1/${host}*${date}.tar.gz ${tmpFolder}
-                    mv ${tmpFolder}/backupFolder1/${host}*--${date}.txt ${tmpFolder}
+                    mvRegex=${outputFolder}/backupFolder1/${host}*${date}.tar.gz
+                    if ls ${mvRegex} 1> /dev/null 2>&1 ; then
+                        mv ${mvRegex} ${outputFolder}
+                    fi
+                    mvRegex=${outputFolder}/backupFolder1/${host}*--${date}.txt
+                    if ls ${mvRegex} 1> /dev/null 2>&1 ; then
+                        mv ${mvRegex} ${outputFolder}
+                    fi
+                    mvRegex=${outputFolder}/backupFolder1/${host}-wpsetting.txt
+                    if ls ${mvRegex} 1> /dev/null 2>&1 ; then
+                        mv ${mvRegex} ${outputFolder}
+                    fi
                 fi
             fi
         fi
