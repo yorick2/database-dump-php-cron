@@ -62,37 +62,37 @@ ini_parser() {
 
 
 removeFileIfExists () {
-    if [ ! -z "${1}" ] ; then
-        exit 'missing variable moveFiles function';
+    if [ -z "${1}" ] ; then
+        echo 'missing variable moveFiles function';
         echo 'missing variables:'
         echo 'bash removeFileIfExists.sh <<<file or folder>>>';
         exit
     fi
-    if ls ${1} 1> /dev/null 2>&1 ; then
-        rm ${1}
+    if ls "${1}" 1> /dev/null 2>&1 ; then
+        rm "${1}"
     fi
 }
 
 moveFileIfExists () {
-    if [ ! -z "${1}" ] || [ ! -z "${2}" ] ; then
-        exit 'missing variable moveFiles function';
+    if [ -z "${1}" ] || [ -z "${2}" ] ; then
+        echo 'missing variable moveFiles function';
         echo 'missing variables:'
         echo 'bash moveFileIfExists.sh <<<source>> <<<destination>>>';
         echo 'source: regex filepath, filepath, folderpath'
         echo 'destination: destination folder'
         exit
     fi
-    if ls ${1} 1> /dev/null 2>&1 ; then
-        mv ${1} ${2}
+    if ls "${1}" 1> /dev/null 2>&1 ; then
+        mv "${1}" "${2}"
     fi
 }
 
 moveBackups () {
-    if [ ! -z "${1}" ] || [ ! -z "${2}" ] ; then
-        exit 'missing variable moveFiles function';
+    if [ -z "${1}" ] || [ -z "${2}" ] ; then
+        echo 'missing variable moveFiles function'
         echo 'missing variables:'
-        echo 'bash moveFiles.sh <<<old folder>>> <<<newFolderPrefix>>> or ';
-        echo 'bash moveFiles.sh <<<old folder>>> <<<newFolderPrefix>>> <<<no. of backups>>> ';
+        echo 'bash moveFiles.sh <<<old folder>>> <<<newFolderPrefix>>> or '
+        echo 'bash moveFiles.sh <<<old folder>>> <<<newFolderPrefix>>> <<<no. of backups>>> '
         echo 'oldFolder: full folder path to old folder'
         echo 'newFolderPrefix: full folder path.'
         echo 'no. of backups: (int) the number of backups to keep'
@@ -105,37 +105,46 @@ moveBackups () {
 
     echo "moving backups"
 
-    if [ -z "${1}" ] ; then
+    if [ -z "${3}" ] ; then
         numberOfBackups="${3}"
     else
         numberOfBackups="3"
     fi
-    COUNTER=${numberBackups};
 
-    # remove unwanted oldest backup
-    removeFileIfExists ${newFolderPrefix}${COUNTER}/${host}*.tar.gz
-    removeFileIfExists ${newFolderPrefix}${COUNTER}/${host}*.txt
+    if [ "${numberOfBackups}" -gt "0" ] ; then
+        COUNTER="${numberOfBackups}";
 
-    # move files to new folders
-    while [  ${COUNTER} -gt 0 ]; do
-        sourceFolder=${newFolderPrefix}$((${COUNTER}-1))
-        destinationFolder=${newFolderPrefix}${COUNTER}
-        if [ ! -d "${destinationFolder}" ] ; then
-            mkdir -p ${destinationFolder}
-        fi
-        if [ ! -w "${destinationFolder}" ] ; then
-            echo "${destinationFolder} is not writable"
-            exit
-        fi
-        moveFileIfExists ${sourceFolder}/${host}*.tar.gz ${destinationFolder}
-        moveFileIfExists ${sourceFolder}/${host}*.txt ${destinationFolder}
-        let COUNTER=${COUNTER}-1
-    done
+        # remove unwanted oldest backup
+        removeFileIfExists ${newFolderPrefix}${COUNTER}/${host}*.tar.gz
+        removeFileIfExists ${newFolderPrefix}${COUNTER}/${host}*.txt
 
-    # move newest files back into folder
-    moveFileIfExists ${newFolderPrefix}1/${host}*${date}.tar.gz ${oldFolder}
-    moveFileIfExists ${newFolderPrefix}1/${host}*--${date}.txt ${oldFolder}
-    moveFileIfExists ${newFolderPrefix}1/${host}-wpsetting.txt ${oldFolder}
+        # move files to new folders
+        while [  "${COUNTER}" -gt "0" ]; do
+            if [ "${COUNTER}" = "1" ] ; then
+                sourceFolder=${oldFolder}
+            else
+                sourceFolder=${newFolderPrefix}$((${COUNTER}-1))
+            fi
+            destinationFolder=${newFolderPrefix}${COUNTER}
+
+            if [ ! -d "${destinationFolder}" ] ; then
+                mkdir -p ${destinationFolder}
+            fi
+            if [ ! -w "${destinationFolder}" ] ; then
+                echo "${destinationFolder} is not writable"
+                exit
+            fi
+
+            moveFileIfExists ${sourceFolder}/${host}*.tar.gz ${destinationFolder}
+            moveFileIfExists ${sourceFolder}/${host}*.txt ${destinationFolder}
+            let COUNTER=${COUNTER}-1
+        done
+
+        # move newest files back into folder
+        moveFileIfExists ${newFolderPrefix}1/${host}*${date}.tar.gz ${oldFolder}
+        moveFileIfExists ${newFolderPrefix}1/${host}*--${date}.txt ${oldFolder}
+        moveFileIfExists ${newFolderPrefix}1/${host}-wpsetting.txt ${oldFolder}
+    fi
 }
 
 ######  #######
@@ -195,92 +204,23 @@ for SEC in $_SECTIONS; do
         date=`date +%Y-%m-%d`;
         # check magento db file exists and has size > 0
         if [ -s "${outputFolder}/${fileRef}--${date}.tar.gz" ] ; then
-            if [ ${numberBackups} -gt 0 ] ; then
-                # check if multiple magento db's in the folder for this host
-                if ls ${outputFolder}/${host}-*tar.gz 1> /dev/null 2>&1 ; then
+            # check if multiple magento db's in the folder for this host
+            if ls ${outputFolder}/${host}-*tar.gz 1> /dev/null 2>&1 ; then
 
-                    moveBackups "${outputFolder}" "${outputFolder}/dailyBackup" "${numberDailyBackups}"
+                moveBackups "${outputFolder}" "${outputFolder}/dailyBackup" "${numberDailyBackups}"
 
-                    LANG=C DOW=$(date +"%a") # todays, day of week e.g. Tue
-                    echo $DOW # todays, day of week e.g. Tue
-                    if [ "${DOW}" = "Sun" ] ; then
-                        moveBackups "${outputFolder}/dailyBackup${numberDailyBackups}" "${outputFolder}/weeklyBackup" "${numberWeeklyBackups}"
-                    fi
-
-                    dateOfMonth=$(date +"%d") # day of month (e.g, 01)
-                    echo $dateOfMonth # day of month (e.g, 01)
-                    if [ "${dateOfMonth}" = "01" ] ; then
-                        moveBackups "${outputFolder}/weeklyBackup${numberDailyBackups}" "${outputFolder}/monthlyBackup" "${numberMonthlyBackups}"
-                    fi
-
-
-
-
-#                    echo "moving backups"
-#                    COUNTER=${numberBackups};
-#
-#                    rmRegex=${outputFolder}/backupFolder${COUNTER}/${host}*.tar.gz
-#                    if ls ${rmRegex} 1> /dev/null 2>&1 ; then
-#                        rm ${rmRegex}
-#                    fi
-#                    rmRegex=${outputFolder}/backupFolder${COUNTER}/${host}*.txt
-#                    if ls ${rmRegex} 1> /dev/null 2>&1 ; then
-#                        rm ${rmRegex}
-#                    fi
-#
-#                    while [  ${COUNTER} -gt 1 ]; do
-#                        sourceFolder=backupFolder$((${COUNTER}-1))
-#			            destinationFolder=backupFolder${COUNTER}
-#			            if [ ! -d "${outputFolder}/${destinationFolder}" ] ; then
-#                            mkdir -p ${outputFolder}/${destinationFolder}
-#                        fi
-#                        if [ ! -w "${outputFolder}/${destinationFolder}" ] ; then
-#                            echo "${outputFolder}/${destinationFolder} is not writable"
-#                            exit
-#                        fi
-#                        mvRegex=${outputFolder}/${sourceFolder}/${host}*.tar.gz
-#                        if ls ${mvRegex} 1> /dev/null 2>&1 ; then
-#                            mv ${mvRegex} ${outputFolder}/${destinationFolder}
-#                        fi
-#                        mvRegex=${outputFolder}/${sourceFolder}/${host}*.txt
-#                        if ls ${mvRegex} 1> /dev/null 2>&1 ; then
-#                            mv ${mvRegex} ${outputFolder}/${destinationFolder}
-#                        fi
-#                        let COUNTER=${COUNTER}-1
-#                    done
-#
-#	                if [ ! -d "${outputFolder}/backupFolder1" ] ; then
-#	                    echo "mkdir -p ${outputFolder}/backupFolder1"
-#                        mkdir -p ${outputFolder}/backupFolder1
-#                    fi
-#                    if [ ! -w "${outputFolder}/backupFolder1" ] ; then
-#                        echo "${outputFolder}/backupFolder1 is not writable"
-#                        exit
-#                    fi
-#
-#                    # move todays and yesterdays files into backupFolder1
-#                    mvRegex=${outputFolder}/${host}*.tar.gz
-#                    if ls ${mvRegex} 1> /dev/null 2>&1 ; then
-#                        mv ${mvRegex} ${outputFolder}/backupFolder1
-#                    fi
-#                    mvRegex=${outputFolder}/${host}*.txt
-#                    if ls ${mvRegex} 1> /dev/null 2>&1 ; then
-#                        mv ${mvRegex} ${outputFolder}/backupFolder1
-#                    fi
-#                    # move todays filest back
-#                    mvRegex=${outputFolder}/backupFolder1/${host}*${date}.tar.gz
-#                    if ls ${mvRegex} 1> /dev/null 2>&1 ; then
-#                        mv ${mvRegex} ${outputFolder}
-#                    fi
-#                    mvRegex=${outputFolder}/backupFolder1/${host}*--${date}.txt
-#                    if ls ${mvRegex} 1> /dev/null 2>&1 ; then
-#                        mv ${mvRegex} ${outputFolder}
-#                    fi
-#                    mvRegex=${outputFolder}/backupFolder1/${host}-wpsetting.txt
-#                    if ls ${mvRegex} 1> /dev/null 2>&1 ; then
-#                        mv ${mvRegex} ${outputFolder}
-#                    fi
+                LANG=C DOW=$(date +"%a") # todays, day of week e.g. Tue
+                echo $DOW # todays, day of week e.g. Tue
+                if [ "${DOW}" = "Sun" ] ; then
+                    moveBackups "${outputFolder}/dailyBackup${numberDailyBackups}" "${outputFolder}/weeklyBackup" "${numberWeeklyBackups}"
                 fi
+
+                dateOfMonth=$(date +"%d") # day of month (e.g, 01)
+                echo $dateOfMonth # day of month (e.g, 01)
+                if [ "${dateOfMonth}" = "01" ] ; then
+                    moveBackups "${outputFolder}/weeklyBackup${numberDailyBackups}" "${outputFolder}/monthlyBackup" "${numberMonthlyBackups}"
+                fi
+
             fi
         fi
     else
