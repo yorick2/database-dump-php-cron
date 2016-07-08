@@ -88,31 +88,33 @@ moveFileIfExists () {
 }
 
 moveBackups () {
-    if [ -z "${1}" ] || [ -z "${2}" ] ; then
+    if [ -z "${1}" ] || [ -z "${2}" ] || [ -z "${3}" ] ; then
         echo 'missing variable moveFiles function'
         echo 'missing variables:'
-        echo 'bash moveFiles.sh <<<old folder>>> <<<newFolderPrefix>>> or '
-        echo 'bash moveFiles.sh <<<old folder>>> <<<newFolderPrefix>>> <<<no. of backups>>> '
+        echo 'bash moveFiles.sh <<<old folder>>> <<<newFolderPrefix>>> <<<date>>> or '
+        echo 'bash moveFiles.sh <<<old folder>>> <<<newFolderPrefix>>> <<<date>>> <<<no. of backups>>> '
         echo 'oldFolder: full folder path to old folder'
         echo 'newFolderPrefix: full folder path.'
+        echo 'date: date in format Y-m-d`;'
         echo 'no. of backups: (int) the number of backups to keep'
         echo 'e.g. /home/myuser/dbDumpScript/monthly which will mean the script will create and use /home/myuser/dbDumpScript/monthly1 /home/myuser/dbDumpScript/monthly2 ....'
         exit
     fi
 
-    oldFolder="${1}"
-    newFolderPrefix="${2}"
+    local oldFolder="${1}"
+    local newFolderPrefix="${2}"
+    local date="${3}"
 
     echo "moving backups"
 
-    if [ -z "${3}" ] ; then
-        numberOfBackups="${3}"
+    if [ -z "${4}" ] ; then
+        local numberOfBackups="${4}"
     else
-        numberOfBackups="3"
+        local numberOfBackups="3"
     fi
 
     if [ "${numberOfBackups}" -gt "0" ] ; then
-        COUNTER="${numberOfBackups}";
+        local COUNTER="${numberOfBackups}";
 
         # remove unwanted oldest backup
         removeFileIfExists ${newFolderPrefix}${COUNTER}/${host}*.tar.gz
@@ -121,11 +123,11 @@ moveBackups () {
         # move files to new folders
         while [  "${COUNTER}" -gt "0" ]; do
             if [ "${COUNTER}" = "1" ] ; then
-                sourceFolder=${oldFolder}
+                local sourceFolder=${oldFolder}
             else
-                sourceFolder=${newFolderPrefix}$((${COUNTER}-1))
+                local sourceFolder=${newFolderPrefix}$((${COUNTER}-1))
             fi
-            destinationFolder=${newFolderPrefix}${COUNTER}
+            local destinationFolder=${newFolderPrefix}${COUNTER}
 
             if [ ! -d "${destinationFolder}" ] ; then
                 mkdir -p ${destinationFolder}
@@ -137,7 +139,7 @@ moveBackups () {
 
             moveFileIfExists ${sourceFolder}/${host}*.tar.gz ${destinationFolder}
             moveFileIfExists ${sourceFolder}/${host}*.txt ${destinationFolder}
-            let COUNTER=${COUNTER}-1
+            local let COUNTER=${COUNTER}-1
         done
 
         # move newest files back into folder
@@ -207,18 +209,18 @@ for SEC in $_SECTIONS; do
             # check if multiple magento db's in the folder for this host
             if ls ${outputFolder}/${host}-*tar.gz 1> /dev/null 2>&1 ; then
 
-                moveBackups "${outputFolder}" "${outputFolder}/dailyBackup" "${numberDailyBackups}"
+                moveBackups "${outputFolder}" "${outputFolder}/dailyBackup" "${date}" "${numberDailyBackups}"
 
                 LANG=C DOW=$(date +"%a") # todays, day of week e.g. Tue
                 echo $DOW # todays, day of week e.g. Tue
                 if [ "${DOW}" = "Sun" ] ; then
-                    moveBackups "${outputFolder}/dailyBackup${numberDailyBackups}" "${outputFolder}/weeklyBackup" "${numberWeeklyBackups}"
+                    moveBackups "${outputFolder}/dailyBackup${numberDailyBackups}" "${outputFolder}/weeklyBackup" "${date}" "${numberWeeklyBackups}"
                 fi
 
                 dateOfMonth=$(date +"%d") # day of month (e.g, 01)
                 echo $dateOfMonth # day of month (e.g, 01)
                 if [ "${dateOfMonth}" = "01" ] ; then
-                    moveBackups "${outputFolder}/weeklyBackup${numberDailyBackups}" "${outputFolder}/monthlyBackup" "${numberMonthlyBackups}"
+                    moveBackups "${outputFolder}/weeklyBackup${numberDailyBackups}" "${outputFolder}/monthlyBackup" "${date}" "${numberMonthlyBackups}"
                 fi
 
             fi
