@@ -139,7 +139,7 @@ moveBackups () {
 
             moveFileIfExists ${sourceFolder}/${host}*.tar.gz ${destinationFolder}
             moveFileIfExists ${sourceFolder}/${host}*.txt ${destinationFolder}
-            local let COUNTER=${COUNTER}-1
+            local let COUNTER=$((COUNTER-1))
         done
 
         # move newest files back into folder
@@ -212,13 +212,11 @@ for SEC in $_SECTIONS; do
                 moveBackups "${outputFolder}" "${outputFolder}/dailyBackup" "${date}" "${numberDailyBackups}"
 
                 LANG=C DOW=$(date +"%a") # todays, day of week e.g. Tue
-                echo $DOW # todays, day of week e.g. Tue
                 if [ "${DOW}" = "Sun" ] ; then
                     moveBackups "${outputFolder}/dailyBackup${numberDailyBackups}" "${outputFolder}/weeklyBackup" "${date}" "${numberWeeklyBackups}"
                 fi
 
                 dateOfMonth=$(date +"%d") # day of month (e.g, 01)
-                echo $dateOfMonth # day of month (e.g, 01)
                 if [ "${dateOfMonth}" = "01" ] ; then
                     moveBackups "${outputFolder}/weeklyBackup${numberDailyBackups}" "${outputFolder}/monthlyBackup" "${date}" "${numberMonthlyBackups}"
                 fi
