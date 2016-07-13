@@ -150,7 +150,7 @@ moveBackups () {
 }
 
 function testSshConnection(){
-    testSshConnection=$( ( ssh ${siteLogin} "echo true" ) & sleep 10 ; kill $!; )
+    testSshConnection=$( ( ssh ${siteLogin} "echo true" ) & sleep 10 ; kill $! 2>/dev/null; )
     if [ "${testSshConnection}" != "true" ]; then
         echo 'ssh connection failed'
         continue

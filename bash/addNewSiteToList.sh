@@ -119,7 +119,7 @@ if [ "${testDownload}" = "y" ] ; then
 
 
     function testSshConnection(){
-        testSshConnection=$( ( ssh ${siteLogin} "echo true" ) & sleep 10 ; kill $!; )
+        testSshConnection=$( ( ssh ${siteLogin} "echo true" ) & sleep 10 ; kill $! 2>/dev/null; )
         if [ "${testSshConnection}" != "true" ]; then
             echo 'ssh connection failed'
             continue
@@ -151,15 +151,18 @@ if [ "${testDownload}" = "y" ] ; then
         echo downloading
         rsyncReply=$(rsync -ahz ${siteLogin}:${remoteTmp}/*.txt ${outputFolder}  && rsync -ahz ${siteLogin}:${remoteTmp}/*.tar.gz ${outputFolder}  && echo "Done" )
         if [ "${rsyncReply}" = "Done" ] ; then 
-          echo "[${host}]" >> ${configFile}
-          echo "user = ${user}" >> ${configFile}
-          echo "host = ${host}" >> ${configFile}
-          if [ ! -z "${docRoot}" ] ; then
+            echo "[${host}]" >> ${configFile}
+            echo "user = ${user}" >> ${configFile}
+            echo "host = ${host}" >> ${configFile}
+            if [ ! -z "${docRoot}" ] ; then
               echo "docRoot = ${docRoot}" >> ${configFile}
-          fi
-          if [ ! -z "${remoteTmpLocation}" ] ; then
+            fi
+            if [ ! -z "${remoteTmpLocation}" ] ; then
               echo "tmpFolder = ${remoteTmpLocation}" >> ${configFile}
-          fi
+            fi
+            echo "---------------------------"
+            echo "Successfully added new site"
+            echo "---------------------------"
         else
             echo "error: rsync failed"
         fi
@@ -180,9 +183,9 @@ else
     if [ ! -z "${remoteTmpLocation}" ] ; then
         echo "tmpFolder = ${remoteTmpLocation}" >> ${configFile}
     fi
+    echo "---------------------------"
+    echo "Successfully added new site"
+    echo "---------------------------"
 fi
 
 
-echo "---------------------------"
-echo "Successfully added new site"
-echo "---------------------------"
