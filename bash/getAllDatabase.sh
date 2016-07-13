@@ -153,6 +153,12 @@ function testSshConnection(){
     testSshConnection=$( ( ssh ${siteLogin} "echo true" ) & sleep 10 ; kill $! 2>/dev/null; )
     if [ "${testSshConnection}" != "true" ]; then
         echo 'ssh connection failed'
+        unset _truncateRewrites
+        unset docRoot
+        unset _docRoot
+        unset tmpFolder
+        unset _tmpFolder
+        unset errors
         continue
     fi
 }
@@ -189,7 +195,6 @@ for SEC in $_SECTIONS; do
     fi
 
     testSshConnection
-
 
     # send command to remote server via ssh
     echo 'creating databases'
