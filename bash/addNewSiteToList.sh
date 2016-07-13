@@ -116,7 +116,17 @@ if [ "${testDownload}" = "y" ] ; then
     else
       remoteTmp="${remoteTmpLocation}"
     fi
-    
+
+
+    function testSshConnection(){
+        testSshConnection=$( ( ssh ${siteLogin} "echo true" ) & sleep 10 ; kill $!; )
+        if [ "${testSshConnection}" != "true" ]; then
+            echo 'ssh connection failed'
+            continue
+        fi
+    }
+    testSshConnection
+
     # send command to remote server via ssh
     echo 'creating databases'
     sshReply=$( ssh ${siteLogin} "url=${host} && folderPath=${remoteTmp} ${_docRoot} && ${catScript}" )
