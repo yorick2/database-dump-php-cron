@@ -140,19 +140,14 @@ moveBackups () {
                 exit
             fi
 
-  #    echo "moveFileIfExists ${sourceFolder}/${host}*.tar.gz ${destinationFolder}"
             moveFileIfExists "${sourceFolder}/${host}*.tar.gz" "${destinationFolder}"
-  #    echo "moveFileIfExists ${sourceFolder}/${host}*.txt ${destinationFolder}"
             moveFileIfExists "${sourceFolder}/${host}*.txt" "${destinationFolder}"
             local let COUNTER=$((COUNTER-1))
         done
 
         # move newest files back into folder
- # echo "moveFileIfExists ${newFolderPrefix}1/${host}*${date}.tar.gz ${oldFolder}"
         moveFileIfExists "${newFolderPrefix}1/${host}*${date}.tar.gz" "${oldFolder}"
- # echo "moveFileIfExists ${newFolderPrefix}1/${host}*--${date}.txt ${oldFolder}"
         moveFileIfExists "${newFolderPrefix}1/${host}*--${date}.txt" "${oldFolder}"
- # echo "moveFileIfExists ${newFolderPrefix}1/${host}-wpsetting.txt ${oldFolder}"
         moveFileIfExists "${newFolderPrefix}1/${host}-wpsetting.txt" "${oldFolder}"
     fi
 }
@@ -231,7 +226,7 @@ for SEC in $_SECTIONS; do
         # check magento db file exists and has size > 0
         if [ -s "${outputFolder}/${fileRef}--${date}.tar.gz" ] ; then
             # check if multiple magento db's in the folder for this host
-            if ls ${outputFolder}/${host}-*tar.gz 1> /dev/null 2>&1 ; then
+            if (ls ${outputFolder}/${host}-*tar.gz | grep -v "${date}" ) 1> /dev/null 2>&1 ; then
 
                 moveBackups "${outputFolder}" "${outputFolder}/dailyBackup" "${date}" "${numberDailyBackups}"
 
