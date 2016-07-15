@@ -68,8 +68,8 @@ removeFileIfExists () {
         echo 'bash removeFileIfExists.sh <<<file or folder>>>';
         exit
     fi
-    if ls "${1}" 1> /dev/null 2>&1 ; then
-        rm "${1}"
+    if ls ${1} 1> /dev/null 2>&1 ; then
+        rm ${1}
     fi
 }
 
@@ -82,8 +82,11 @@ moveFileIfExists () {
         echo 'destination: destination folder'
         exit
     fi
-    if ls "${1}" 1> /dev/null 2>&1 ; then
-        mv "${1}" "${2}"
+
+echo "if ls ${1} 1> /dev/null 2>&1 ; then"
+    if ls ${1} 1> /dev/null 2>&1 ; then
+    #    echo "mv ${1} ${2}"
+        mv ${1} ${2}
     fi
 }
 
@@ -117,35 +120,40 @@ moveBackups () {
         local COUNTER="${numberOfBackups}";
 
         # remove unwanted oldest backup
-        removeFileIfExists ${newFolderPrefix}${COUNTER}/${host}*.tar.gz
-        removeFileIfExists ${newFolderPrefix}${COUNTER}/${host}*.txt
+        removeFileIfExists "${newFolderPrefix}${COUNTER}/${host}*.tar.gz"
+        removeFileIfExists "${newFolderPrefix}${COUNTER}/${host}*.txt"
 
         # move files to new folders
         while [  "${COUNTER}" -gt "0" ]; do
             if [ "${COUNTER}" = "1" ] ; then
-                local sourceFolder=${oldFolder}
+                local sourceFolder="${oldFolder}"
             else
                 local sourceFolder=${newFolderPrefix}$((${COUNTER}-1))
             fi
-            local destinationFolder=${newFolderPrefix}${COUNTER}
+            local destinationFolder="${newFolderPrefix}${COUNTER}"
 
             if [ ! -d "${destinationFolder}" ] ; then
-                mkdir -p ${destinationFolder}
+                mkdir -p "${destinationFolder}"
             fi
             if [ ! -w "${destinationFolder}" ] ; then
                 echo "${destinationFolder} is not writable"
                 exit
             fi
 
-            moveFileIfExists ${sourceFolder}/${host}*.tar.gz ${destinationFolder}
-            moveFileIfExists ${sourceFolder}/${host}*.txt ${destinationFolder}
+  #    echo "moveFileIfExists ${sourceFolder}/${host}*.tar.gz ${destinationFolder}"
+            moveFileIfExists "${sourceFolder}/${host}*.tar.gz" "${destinationFolder}"
+  #    echo "moveFileIfExists ${sourceFolder}/${host}*.txt ${destinationFolder}"
+            moveFileIfExists "${sourceFolder}/${host}*.txt" "${destinationFolder}"
             local let COUNTER=$((COUNTER-1))
         done
 
         # move newest files back into folder
-        moveFileIfExists ${newFolderPrefix}1/${host}*${date}.tar.gz ${oldFolder}
-        moveFileIfExists ${newFolderPrefix}1/${host}*--${date}.txt ${oldFolder}
-        moveFileIfExists ${newFolderPrefix}1/${host}-wpsetting.txt ${oldFolder}
+ # echo "moveFileIfExists ${newFolderPrefix}1/${host}*${date}.tar.gz ${oldFolder}"
+        moveFileIfExists "${newFolderPrefix}1/${host}*${date}.tar.gz" "${oldFolder}"
+ # echo "moveFileIfExists ${newFolderPrefix}1/${host}*--${date}.txt ${oldFolder}"
+        moveFileIfExists "${newFolderPrefix}1/${host}*--${date}.txt" "${oldFolder}"
+ # echo "moveFileIfExists ${newFolderPrefix}1/${host}-wpsetting.txt ${oldFolder}"
+        moveFileIfExists "${newFolderPrefix}1/${host}-wpsetting.txt" "${oldFolder}"
     fi
 }
 
