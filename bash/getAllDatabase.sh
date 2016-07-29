@@ -4,9 +4,9 @@
 
 outputFolder="databases"
 configFile="sites.ini";
-numberDailyBackups=7;
-numberWeeklyBackups=10;
-numberMonthlyBackups=6;
+numberDailyBackups=2; #7;
+numberWeeklyBackups=2; #10;
+numberMonthlyBackups=2; #6;
 
 if [ ! -z "${1}"  ] ; then
     testSectionName="${1}" # the name of the site to test in [] from the sites.ini file
@@ -60,12 +60,12 @@ ini_parser() {
 
 ###### set functions #######
 
-
+# 1 (string) file or folder location, allows use of *'s etc
 removeFileIfExists () {
     if [ -z "${1}" ] ; then
         echo 'missing variable moveFiles function';
         echo 'missing variables:'
-        echo 'bash removeFileIfExists.sh <<<file or folder>>>';
+        echo 'bash removeFileIfExists <<<file or folder>>>';
         exit
     fi
     if ls ${1} 1> /dev/null 2>&1 ; then
@@ -73,50 +73,66 @@ removeFileIfExists () {
     fi
 }
 
+# 1 (string) source file or folder location, allows use of *'s etc
+# 2 (string) destination folder location
 moveFileIfExists () {
     if [ -z "${1}" ] || [ -z "${2}" ] ; then
-        echo 'missing variable moveFiles function';
+        echo 'moveFiles function missing variable';
         echo 'missing variables:'
-        echo 'bash moveFileIfExists.sh <<<source>> <<<destination>>>';
+        echo 'bash moveFileIfExists <<<source>> <<<destination>>>';
         echo 'source: regex filepath, filepath, folderpath'
         echo 'destination: destination folder'
         exit
     fi
 
-echo "if ls ${1} 1> /dev/null 2>&1 ; then"
+    echo "mv ${1} ${2}" #######>>>>deleteme
     if ls ${1} 1> /dev/null 2>&1 ; then
-    #    echo "mv ${1} ${2}"
         mv ${1} ${2}
     fi
 }
 
-moveBackups () {
-    if [ -z "${1}" ] || [ -z "${2}" ] || [ -z "${3}" ] ; then
+# move backups between folders and remove no longer required files. Works for one destination folder prefix.
+# e.g. moving files foir the daily backups is run using
+# moveBackupSet "${outputFolder}" "${outputFolder}/dailyBackup" "${date}" "${numberDailyBackups}"
+#
+# 1 (string) source folder location
+# 2 (string) destination folder location prefix,
+# 3 (string) [optional] date, used in file naming
+# 4 (int) number of backups to keep
+moveBackupSet () {
+    if [ -z "${1}" ] || [ -z "${2}" ] ; then
         echo 'missing variable moveFiles function'
         echo 'missing variables:'
-        echo 'bash moveFiles.sh <<<old folder>>> <<<newFolderPrefix>>> <<<date>>> or '
-        echo 'bash moveFiles.sh <<<old folder>>> <<<newFolderPrefix>>> <<<date>>> <<<no. of backups>>> '
+        echo 'bash moveBackupSet <<<old folder>>> <<<newFolderPrefix>>> or '
+        echo 'bash moveBackupSet <<<old folder>>> <<<newFolderPrefix>>> <<<date>>> or '
+        echo 'bash moveBackupSet <<<old folder>>> <<<newFolderPrefix>>> <<<date>>> <<<no. of backups>>> '
         echo 'oldFolder: full folder path to old folder'
         echo 'newFolderPrefix: full folder path.'
+        echo 'e.g. /home/myuser/dbDumpScript/monthly which will mean the script will create and use /home/myuser/dbDumpScript/monthly1 /home/myuser/dbDumpScript/monthly2 ....'
         echo 'date: date in format Y-m-d`;'
         echo 'no. of backups: (int) the number of backups to keep'
-        echo 'e.g. /home/myuser/dbDumpScript/monthly which will mean the script will create and use /home/myuser/dbDumpScript/monthly1 /home/myuser/dbDumpScript/monthly2 ....'
         exit
     fi
 
     local oldFolder="${1}"
     local newFolderPrefix="${2}"
-    local date="${3}"
 
-    echo "moving backups"
+     if [ -z "${3}" ] ; then
+        local date=`date +%Y-%m-%d`;
+    else
+        local date="${3}"
+    fi
 
     if [ -z "${4}" ] ; then
-        local numberOfBackups="${4}"
-    else
         local numberOfBackups="3"
+    else
+        local numberOfBackups="${4}"
     fi
 
     if [ "${numberOfBackups}" -gt "0" ] ; then
+
+        echo "moving backups"
+
         local COUNTER="${numberOfBackups}";
 
         # remove unwanted oldest backup
@@ -144,16 +160,54 @@ moveBackups () {
             moveFileIfExists "${sourceFolder}/${host}*.txt" "${destinationFolder}"
             local let COUNTER=$((COUNTER-1))
         done
-
-        # move newest files back into folder
-        moveFileIfExists "${newFolderPrefix}1/${host}*${date}.tar.gz" "${oldFolder}"
-        moveFileIfExists "${newFolderPrefix}1/${host}*--${date}.txt" "${oldFolder}"
-        moveFileIfExists "${newFolderPrefix}1/${host}-wpsetting.txt" "${oldFolder}"
     fi
 }
 
-function testSshConnection(){
-    testSshConnection=$( ( ssh ${siteLogin} "echo true" ) & sleep 10 ; kill $! 2>/dev/null; )
+# moves all the backups
+#
+# host (string) host url
+# outputFolder (string)
+# numberDailyBackups (int)
+# numberWeeklyBackups (int)
+# numberMonthlyBackups (int)
+moveBackups () {
+    local fileRef="${host}-magento"
+    local date=`date +%Y-%m-%d`;
+    echo "${outputFolder}/${fileRef}--${date}.tar.gz"  #######>>>>deleteme
+    # check magento db file exists and has size > 0
+    if [ -s "${outputFolder}/${fileRef}--${date}.tar.gz" ] ; then
+        # check if multiple magento db's in the folder for this host
+        if ( ls ${outputFolder}/${host}-*tar.gz | grep "${date}" ) 1> /dev/null 2>&1; then
+            echo "moving backups"
+
+            dateOfMonth=$(date +"%d") # day of month (e.g, 01)
+            if [ "${dateOfMonth}" = "29" ] ; then
+                echo "moveBackupSet" "${outputFolder}/weeklyBackup${numberWeeklyBackups}" "${outputFolder}/monthlyBackup" "${date}" "${numberMonthlyBackups}" #######>>>>deleteme
+                moveBackupSet "${outputFolder}/weeklyBackup${numberWeeklyBackups}" "${outputFolder}/monthlyBackup" "${date}" "${numberMonthlyBackups}"
+            fi
+
+            LANG=C DOW=$(date +"%a") # todays, day of week e.g. Tue
+            if [ "${DOW}" = "Fri" ] ; then
+                echo "moveBackupSet" "${outputFolder}/dailyBackup${numberDailyBackups}" "${outputFolder}/weeklyBackup" "${date}" "${numberWeeklyBackups}" #######>>>>deleteme
+                moveBackupSet "${outputFolder}/dailyBackup${numberDailyBackups}" "${outputFolder}/weeklyBackup" "${date}" "${numberWeeklyBackups}"
+            fi
+
+            echo " moveBackupSet" "${outputFolder}" "${outputFolder}/dailyBackup" "${date}" "${numberDailyBackups}" #######>>>>deleteme
+            moveBackupSet "${outputFolder}" "${outputFolder}/dailyBackup" "${date}" "${numberDailyBackups}"
+            if [ "${numberDailyBackups}" -gt "0" ] ; then
+                # move newest files back into folder
+                moveFileIfExists "${outputFolder}/dailyBackup1/${host}*${date}.tar.gz" "${oldFolder}"
+                moveFileIfExists "${outputFolder}/dailyBackup1/${host}*--${date}.txt" "${oldFolder}"
+                moveFileIfExists "${outputFolder}/dailyBackup1/${host}-wpsetting.txt" "${oldFolder}"
+            fi
+
+        fi
+    fi
+}
+
+# siteLogin (string)
+testSshConnection () {
+    local testSshConnection=$( ( ssh ${siteLogin} "echo true" ) & sleep 10 ; kill $! 2>/dev/null; )
     if [ "${testSshConnection}" != "true" ]; then
         echo 'ssh connection failed'
         unset _truncateRewrites
@@ -166,21 +220,11 @@ function testSshConnection(){
     fi
 }
 
-######  #######
-
-# remove old log file
-if [ -w ${scriptDir}/dbDumpErrors.log ]; then
-    rm ${scriptDir}/dbDumpErrors.log
-fi
-
-# A sections array that we'll loop through
-for SEC in $_SECTIONS; do
-    echo [${SEC}]
-    # get info from ini file
-    ini_parser ${configFile} ${SEC};
-
-	siteLogin="${user}@${host}"
-
+# siteLogin (string)
+# host (string)
+# outputFolder (string)
+# tmpFolder (string)
+getSiteDatabases () {
     # get contents of script to run on remote server
 	catScript=$(cat ${scriptDir}/dumpMagentoDatabase.sh)
 
@@ -197,20 +241,18 @@ for SEC in $_SECTIONS; do
         _docRoot="&& magentoPath=${docRoot} "
     fi
 
-    testSshConnection
-
     # send command to remote server via ssh
     echo 'creating databases'
-    sshReply=$( ssh ${siteLogin} "url=${host} ${_tmpFolder} ${_truncateRewrites} ${_docRoot} && ${catScript}" )
+    local sshReply=$( ssh ${siteLogin} "url=${host} ${_tmpFolder} ${_truncateRewrites} ${_docRoot} && ${catScript}" )
 
-#	# debug code, for testing remote server code
-#	echo '-----------------------'
-#	echo ${sshReply}
-#	echo '-----------------------'
+    #	# debug code, for testing remote server code
+    #	echo '-----------------------'
+    #	echo ${sshReply}
+    #	echo '-----------------------'
 
-	sshReplyLastLine=$( echo "${sshReply}" | sed -e '$!d')
+    local sshReplyLastLine=$( echo "${sshReply}" | sed -e '$!d')
     # if finished successfully get new database
-    if [ "$sshReplyLastLine" = "Finished" ] ; then
+    if [ "${sshReplyLastLine}" = "Finished" ] ; then
         if [ ! -d "${outputFolder}" ] ; then
             mkdir -p ${outputFolder}
         fi
@@ -221,27 +263,9 @@ for SEC in $_SECTIONS; do
         echo downloading
         rsync -ahz ${siteLogin}:${tmpFolder}/*.tar.gz ${outputFolder}
         rsync -ahz ${siteLogin}:${tmpFolder}/*.txt ${outputFolder}
-        fileRef="${host}-magento"
-        date=`date +%Y-%m-%d`;
-        # check magento db file exists and has size > 0
-        if [ -s "${outputFolder}/${fileRef}--${date}.tar.gz" ] ; then
-            # check if multiple magento db's in the folder for this host
-            if (ls ${outputFolder}/${host}-*tar.gz | grep -v "${date}" ) 1> /dev/null 2>&1 ; then
 
-                moveBackups "${outputFolder}" "${outputFolder}/dailyBackup" "${date}" "${numberDailyBackups}"
+        moveBackups
 
-                LANG=C DOW=$(date +"%a") # todays, day of week e.g. Tue
-                if [ "${DOW}" = "Sun" ] ; then
-                    moveBackups "${outputFolder}/dailyBackup${numberDailyBackups}" "${outputFolder}/weeklyBackup" "${date}" "${numberWeeklyBackups}"
-                fi
-
-                dateOfMonth=$(date +"%d") # day of month (e.g, 01)
-                if [ "${dateOfMonth}" = "01" ] ; then
-                    moveBackups "${outputFolder}/weeklyBackup${numberDailyBackups}" "${outputFolder}/monthlyBackup" "${date}" "${numberMonthlyBackups}"
-                fi
-
-            fi
-        fi
     else
         # echo error
         echo "${sshReplyLastLine}"
@@ -249,6 +273,27 @@ for SEC in $_SECTIONS; do
         errors="${host}: ${sshReplyLastLine}"
         printf "${errors}\n" >> ${scriptDir}/dbDumpErrors.log
     fi
+}
+
+###### Run the program  #######
+
+# remove old log file
+if [ -w ${scriptDir}/dbDumpErrors.log ]; then
+    rm ${scriptDir}/dbDumpErrors.log
+fi
+
+# A sections array that we'll loop through
+for SEC in $_SECTIONS; do
+
+    echo [${SEC}]
+    # get info from ini file
+    ini_parser ${configFile} ${SEC};
+
+	siteLogin="${user}@${host}"
+
+    testSshConnection
+
+	getSiteDatabases
 
     unset _truncateRewrites
     unset docRoot
