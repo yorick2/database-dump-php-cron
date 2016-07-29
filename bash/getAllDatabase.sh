@@ -196,9 +196,12 @@ moveBackups () {
             moveBackupSet "${outputFolder}" "${outputFolder}/dailyBackup" "${date}" "${numberDailyBackups}"
             if [ "${numberDailyBackups}" -gt "0" ] ; then
                 # move newest files back into folder
-                moveFileIfExists "${outputFolder}/dailyBackup1/${host}*${date}.tar.gz" "${oldFolder}"
-                moveFileIfExists "${outputFolder}/dailyBackup1/${host}*--${date}.txt" "${oldFolder}"
-                moveFileIfExists "${outputFolder}/dailyBackup1/${host}-wpsetting.txt" "${oldFolder}"
+                echo moveFileIfExists "${outputFolder}/dailyBackup1/${host}*${date}.tar.gz" "${outputFolder}"
+                moveFileIfExists "${outputFolder}/dailyBackup1/${host}*${date}.tar.gz" "${outputFolder}"
+                echo moveFileIfExists "${outputFolder}/dailyBackup1/${host}*--${date}.txt" "${outputFolder}"
+                moveFileIfExists "${outputFolder}/dailyBackup1/${host}*--${date}.txt" "${outputFolder}"
+                echo moveFileIfExists "${outputFolder}/dailyBackup1/${host}-wpsetting.txt" "${outputFolder}"
+                moveFileIfExists "${outputFolder}/dailyBackup1/${host}-wpsetting.txt" "${outputFolder}"
             fi
 
         fi
