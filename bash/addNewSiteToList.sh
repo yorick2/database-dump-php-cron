@@ -149,7 +149,7 @@ if [ "${testDownload}" = "y" ] ; then
             exit
         fi
         echo downloading
-        rsyncReply=$(rsync -ahz ${siteLogin}:${remoteTmp}/*.txt ${outputFolder}  && rsync -ahz ${siteLogin}:${remoteTmp}/*.tar.gz ${outputFolder}  && echo "Done" )
+        rsyncReply=$(rsync -ahz ${siteLogin}:${remoteTmp}/*.tar.gz ${outputFolder}  && echo "Done" && rsync -ahz ${siteLogin}:${remoteTmp}/*.txt ${outputFolder}  )
         if [ "${rsyncReply}" = "Done" ] ; then 
             echo "[${host}]" >> ${configFile}
             echo "user = ${user}" >> ${configFile}
