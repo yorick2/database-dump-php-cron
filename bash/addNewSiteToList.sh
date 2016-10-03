@@ -39,6 +39,8 @@ if [ "${random}" = "1" ] ; then
    fi
 fi
 
+echo "site name (for reference)?"
+read name
 echo "site url?"
 read host
 host="${host#http://}";
@@ -51,10 +53,10 @@ if [ -f ${configFile} ]; then
         exit
     fi
 fi
+
 echo "ssh user?"
 read user
-echo "site name"
-read name
+
 
 if [ -z "${host}" ] ; then
    exit
