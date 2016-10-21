@@ -174,10 +174,17 @@ moveBackups () {
     local fileRef="${host}-magento"
     local date=`date +%Y-%m-%d`;
     echo "${outputFolder}/${fileRef}--${date}.tar.gz"  #######>>>>deleteme
+
     # check magento db file exists and has size > 0
-    if [ -s "${outputFolder}/${fileRef}--${date}.tar.gz" ] ; then
-        # check if multiple magento db's in the folder for this host
-        if ( ls ${outputFolder}/${host}-*tar.gz | grep "${date}" ) 1> /dev/null 2>&1; then
+#    if [ -s "${outputFolder}/${fileRef}--${date}.tar.gz" ] ; then
+#        # check if multiple magento db's in the folder for this host
+#        if ( ls ${outputFolder}/${host}-*tar.gz | grep "${date}" ) 1> /dev/null 2>&1; then
+
+
+
+    for dbFile in "${outputFolder}/${host}-*--${date}.tar.gz" ; do
+            dbFileWithoutDate="${dbFile/${date}/*}"
+
             echo "moving backups"
 
             dateOfMonth=$(date +"%d") # day of month (e.g, 01)
@@ -203,9 +210,14 @@ moveBackups () {
                 echo moveFileIfExists "${outputFolder}/dailyBackup1/${host}-wpsetting.txt" "${outputFolder}"
                 moveFileIfExists "${outputFolder}/dailyBackup1/${host}-wpsetting.txt" "${outputFolder}"
             fi
+    done
 
-        fi
-    fi
+
+
+
+#        fi
+#    fi
+
 }
 
 # siteLogin (string)
