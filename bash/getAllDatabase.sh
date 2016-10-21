@@ -288,7 +288,7 @@ fi
 # A sections array that we'll loop through
 for SEC in $_SECTIONS; do
 
-    echo [${SEC}]
+    echo "[${SEC}]"
     # get info from ini file
     ini_parser ${configFile} ${SEC};
 
