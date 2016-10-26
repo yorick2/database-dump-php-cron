@@ -51,7 +51,7 @@ siteLogin="${user}@${host}"
 
 catScript=$(cat dumpMagentoDatabase.sh)
 
-echo [${sec}]
+echo "[${sec}]"
 if [ -z ${docRoot} ] ; then
     ssh ${siteLogin} "url=${host} && siteRootTest=true && ${catScript}"
 else

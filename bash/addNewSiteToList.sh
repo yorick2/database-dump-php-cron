@@ -39,6 +39,8 @@ if [ "${random}" = "1" ] ; then
    fi
 fi
 
+echo "site name (for reference)?"
+read name
 echo "site url?"
 read host
 host="${host#http://}";
@@ -51,10 +53,10 @@ if [ -f ${configFile} ]; then
         exit
     fi
 fi
+
 echo "ssh user?"
 read user
-echo "site name"
-read name
+
 
 if [ -z "${host}" ] ; then
    exit
@@ -116,7 +118,17 @@ if [ "${testDownload}" = "y" ] ; then
     else
       remoteTmp="${remoteTmpLocation}"
     fi
-    
+
+
+    function testSshConnection(){
+        testSshConnection=$( ( ssh ${siteLogin} "echo true" ) & sleep 10 ; kill $! 2>/dev/null; )
+        if [ "${testSshConnection}" != "true" ]; then
+            echo 'ssh connection failed'
+            continue
+        fi
+    }
+    testSshConnection
+
     # send command to remote server via ssh
     echo 'creating databases'
     sshReply=$( ssh ${siteLogin} "url=${host} && folderPath=${remoteTmp} ${_docRoot} && ${catScript}" )
@@ -139,17 +151,20 @@ if [ "${testDownload}" = "y" ] ; then
             exit
         fi
         echo downloading
-        rsyncReply=$(rsync -ahz ${siteLogin}:${remoteTmp}/*.txt ${outputFolder}  && rsync -ahz ${siteLogin}:${remoteTmp}/*.tar.gz ${outputFolder}  && echo "Done" )
+        rsyncReply=$(rsync -ahz ${siteLogin}:${remoteTmp}/*.tar.gz ${outputFolder}  && echo "Done" && rsync -ahz ${siteLogin}:${remoteTmp}/*.txt ${outputFolder}  )
         if [ "${rsyncReply}" = "Done" ] ; then 
-          echo "[${host}]" >> ${configFile}
-          echo "user = ${user}" >> ${configFile}
-          echo "host = ${host}" >> ${configFile}
-          if [ ! -z "${docRoot}" ] ; then
+            echo "[${host}]" >> ${configFile}
+            echo "user = ${user}" >> ${configFile}
+            echo "host = ${host}" >> ${configFile}
+            if [ ! -z "${docRoot}" ] ; then
               echo "docRoot = ${docRoot}" >> ${configFile}
-          fi
-          if [ ! -z "${remoteTmpLocation}" ] ; then
+            fi
+            if [ ! -z "${remoteTmpLocation}" ] ; then
               echo "tmpFolder = ${remoteTmpLocation}" >> ${configFile}
-          fi
+            fi
+            echo "---------------------------"
+            echo "Successfully added new site"
+            echo "---------------------------"
         else
             echo "error: rsync failed"
         fi
@@ -170,9 +185,9 @@ else
     if [ ! -z "${remoteTmpLocation}" ] ; then
         echo "tmpFolder = ${remoteTmpLocation}" >> ${configFile}
     fi
+    echo "---------------------------"
+    echo "Successfully added new site"
+    echo "---------------------------"
 fi
 
 
-echo "---------------------------"
-echo "Successfully added new site"
-echo "---------------------------"
