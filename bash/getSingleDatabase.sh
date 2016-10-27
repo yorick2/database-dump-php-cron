@@ -3,27 +3,17 @@
 outputFolder="databases"
 configFile="sites.ini";
 
-# script location
-scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+eval userDir=~$(whoami); # get user folder location
+
 # make paths relative to script
 if [[ ${outputFolder} != /* ]]; then
-    outputFolder=${scriptDir}/${outputFolder}
+    outputFolder="${userDir}"
 fi
 if [[ ${configFile} != /* ]]; then
     configFile=${scriptDir}/${configFile}
 fi
 
 errors=''
-
-if [ ! -e "${configFile}" ] ; then
-    echo "${configFile} config file dosnt exist";
-    exit;
-else
-    if [ ! -r "${configFile}" ] ; then
-        echo "${configFile} config file isnt readable";
-        exit;
-    fi
-fi
 
 _SECTIONS=`cat ${configFile} | grep -o -P "\[([a-zA-Z0-9-._ ]+)\]" | tr -d [] | sed ':a;N;$!ba;s/\n/ /g'`
 
