@@ -227,7 +227,9 @@ testSshConnection () {
 # host (string)
 # outputFolder (string)
 # tmpFolder (string)
+# scriptDir (string)
 # docRoot (string) optional
+# truncateRewrites (string) optional
 getSingleSiteDatabases () {
     # get contents of script to run on remote server
 	catScript=$(cat ${scriptDir}/dumpMagentoDatabase.sh)
