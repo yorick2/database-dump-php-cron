@@ -239,7 +239,10 @@ testSshConnection () {
 # host (string)
 # outputFolder (string)
 # tmpFolder (string)
-getSiteDatabases () {
+# scriptDir (string)
+# docRoot (string) optional
+# truncateRewrites (string) optional
+getSingleSiteDatabases () {
     # get contents of script to run on remote server
 	catScript=$(cat ${scriptDir}/dumpMagentoDatabase.sh)
 
@@ -308,7 +311,7 @@ for SEC in $_SECTIONS; do
 
     testSshConnection
 
-	getSiteDatabases
+	getSingleSiteDatabases
 
     unset _truncateRewrites
     unset docRoot
