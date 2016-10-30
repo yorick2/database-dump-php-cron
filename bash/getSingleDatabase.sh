@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 outputFolder="databases"
 configFile="sites.ini";
