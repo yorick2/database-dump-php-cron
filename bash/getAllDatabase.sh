@@ -92,36 +92,29 @@ moveFileIfExists () {
 }
 
 # move backups between folders and remove no longer required files. Works for one destination folder prefix.
-# e.g. moving files foir the daily backups is run using
+# e.g. moving files for the daily backups is run using
 # moveBackupSet "${outputFolder}" "${outputFolder}/dailyBackup" "${date}" "${numberDailyBackups}"
 #
 # 1 (string) source folder location
 # 2 (string) destination folder location prefix,
-# 3 (string) [optional] date, used in file naming
+# 3 (string) filename including * as a wildcard
 # 4 (int) number of backups to keep
 moveBackupSet () {
     if [ -z "${1}" ] || [ -z "${2}" ] ; then
         echo 'missing variable moveFiles function'
         echo 'missing variables:'
-        echo 'bash moveBackupSet <<<old folder>>> <<<newFolderPrefix>>> or '
-        echo 'bash moveBackupSet <<<old folder>>> <<<newFolderPrefix>>> <<<date>>> or '
-        echo 'bash moveBackupSet <<<old folder>>> <<<newFolderPrefix>>> <<<date>>> <<<no. of backups>>> '
+        echo 'bash moveBackupSet <<<old folder>>> <<<newFolderPrefix>>> <<<fileName>>> or '
+        echo 'bash moveBackupSet <<<old folder>>> <<<newFolderPrefix>>> <<<fileName>>> <<<no. of backups>>>'
         echo 'oldFolder: full folder path to old folder'
         echo 'newFolderPrefix: full folder path.'
         echo 'e.g. /home/myuser/dbDumpScript/monthly which will mean the script will create and use /home/myuser/dbDumpScript/monthly1 /home/myuser/dbDumpScript/monthly2 ....'
-        echo 'date: date in format Y-m-d`;'
         echo 'no. of backups: (int) the number of backups to keep'
         exit
     fi
 
     local oldFolder="${1}"
     local newFolderPrefix="${2}"
-
-     if [ -z "${3}" ] ; then
-        local date=`date +%Y-%m-%d`;
-    else
-        local date="${3}"
-    fi
+    local fileName="${3}"
 
     if [ -z "${4}" ] ; then
         local numberOfBackups="3"
@@ -136,8 +129,7 @@ moveBackupSet () {
         local COUNTER="${numberOfBackups}";
 
         # remove unwanted oldest backup
-        removeFileIfExists "${newFolderPrefix}${COUNTER}/${host}*.tar.gz"
-        removeFileIfExists "${newFolderPrefix}${COUNTER}/${host}*.txt"
+        removeFileIfExists "${newFolderPrefix}${COUNTER}/${fileName}"
 
         # move files to new folders
         while [  "${COUNTER}" -gt "0" ]; do
@@ -156,8 +148,7 @@ moveBackupSet () {
                 exit
             fi
 
-            moveFileIfExists "${sourceFolder}/${host}*.tar.gz" "${destinationFolder}"
-            moveFileIfExists "${sourceFolder}/${host}*.txt" "${destinationFolder}"
+            moveFileIfExists "${sourceFolder}/${fileName}" "${destinationFolder}"
             local let COUNTER=$((COUNTER-1))
         done
     fi
@@ -171,53 +162,43 @@ moveBackupSet () {
 # numberWeeklyBackups (int)
 # numberMonthlyBackups (int)
 moveBackups () {
-    local fileRef="${host}-magento"
+    echo "moving backups"
+
     local date=`date +%Y-%m-%d`;
-    echo "${outputFolder}/${fileRef}--${date}.tar.gz"  #######>>>>deleteme
-
-    # check magento db file exists and has size > 0
-#    if [ -s "${outputFolder}/${fileRef}--${date}.tar.gz" ] ; then
-#        # check if multiple magento db's in the folder for this host
-#        if ( ls ${outputFolder}/${host}-*tar.gz | grep "${date}" ) 1> /dev/null 2>&1; then
-
-
-
     for dbFile in "${outputFolder}/${host}-*--${date}.tar.gz" ; do
             dbFileWithoutDate="${dbFile/${date}/*}"
 
-            echo "moving backups"
-
             dateOfMonth=$(date +"%d") # day of month (e.g, 01)
-            if [ "${dateOfMonth}" = "29" ] ; then
+            if [ "${dateOfMonth}" = "01" ] ; then
                 echo "moveBackupSet" "${outputFolder}/weeklyBackup${numberWeeklyBackups}" "${outputFolder}/monthlyBackup" "${date}" "${numberMonthlyBackups}" #######>>>>deleteme
-                moveBackupSet "${outputFolder}/weeklyBackup${numberWeeklyBackups}" "${outputFolder}/monthlyBackup" "${date}" "${numberMonthlyBackups}"
+                moveBackupSet "${outputFolder}/weeklyBackup${numberWeeklyBackups}" "${outputFolder}/monthlyBackup" "${dbFileWithoutDate}" "${date}" "${numberMonthlyBackups}"
             fi
 
             LANG=C DOW=$(date +"%a") # todays, day of week e.g. Tue
-            if [ "${DOW}" = "Fri" ] ; then
+            if [ "${DOW}" = "Mon" ] ; then
                 echo "moveBackupSet" "${outputFolder}/dailyBackup${numberDailyBackups}" "${outputFolder}/weeklyBackup" "${date}" "${numberWeeklyBackups}" #######>>>>deleteme
-                moveBackupSet "${outputFolder}/dailyBackup${numberDailyBackups}" "${outputFolder}/weeklyBackup" "${date}" "${numberWeeklyBackups}"
+                moveBackupSet "${outputFolder}/dailyBackup${numberDailyBackups}" "${outputFolder}/weeklyBackup" "${dbFileWithoutDate}" "${date}" "${numberWeeklyBackups}"
             fi
 
             echo " moveBackupSet" "${outputFolder}" "${outputFolder}/dailyBackup" "${date}" "${numberDailyBackups}" #######>>>>deleteme
-            moveBackupSet "${outputFolder}" "${outputFolder}/dailyBackup" "${date}" "${numberDailyBackups}"
+            moveBackupSet "${outputFolder}" "${outputFolder}/dailyBackup" "${dbFileWithoutDate}" "${date}" "${numberDailyBackups}"
             if [ "${numberDailyBackups}" -gt "0" ] ; then
                 # move newest files back into folder
                 echo moveFileIfExists "${outputFolder}/dailyBackup1/${host}*${date}.tar.gz" "${outputFolder}"
                 moveFileIfExists "${outputFolder}/dailyBackup1/${host}*${date}.tar.gz" "${outputFolder}"
-                echo moveFileIfExists "${outputFolder}/dailyBackup1/${host}*--${date}.txt" "${outputFolder}"
-                moveFileIfExists "${outputFolder}/dailyBackup1/${host}*--${date}.txt" "${outputFolder}"
-                echo moveFileIfExists "${outputFolder}/dailyBackup1/${host}-wpsetting.txt" "${outputFolder}"
-                moveFileIfExists "${outputFolder}/dailyBackup1/${host}-wpsetting.txt" "${outputFolder}"
+            else
+            #
+            # neeeeds testing
+            #
+            #
+            #
+                # remove unwanted files
+                mv "${dbFileWithoutDate}" "${outputFolder}/dailyBackup1"
+                mv "${host}-*--${date}.tar.gz" "${outputFolder}"
+                removeFileIfExists "dailyBackup1/${dbFileWithoutDate}"
             fi
+
     done
-
-
-
-
-#        fi
-#    fi
-
 }
 
 # siteLogin (string)
