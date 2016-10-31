@@ -84,7 +84,6 @@ moveFileIfExists () {
         exit
     fi
 
-    echo "mv ${1} ${2}" #######>>>>---deleteme---
     if ls ${1} 1> /dev/null 2>&1 ; then
         mv ${1} ${2}
     fi
@@ -170,21 +169,17 @@ moveBackups () {
 
             dateOfMonth=$(date +"%d") # day of month (e.g, 01)
             if [ "${dateOfMonth}" = "01" ] ; then
-                echo "moveBackupSet" "${outputFolder}/weeklyBackup${numberWeeklyBackups}" "${outputFolder}/monthlyBackup" "${fileNameWithoutDate}" "${numberMonthlyBackups}" #######>>>>deleteme
                 moveBackupSet "${outputFolder}/weeklyBackup${numberWeeklyBackups}" "${outputFolder}/monthlyBackup" "${fileNameWithoutDate}" "${numberMonthlyBackups}"
             fi
 
             LANG=C DOW=$(date +"%a") # todays, day of week e.g. Tue
             if [ "${DOW}" = "Mon" ] ; then
-                echo "moveBackupSet" "${outputFolder}/dailyBackup${numberDailyBackups}" "${outputFolder}/weeklyBackup" "${fileNameWithoutDate}" "${numberWeeklyBackups}" #######>>>>deleteme
                 moveBackupSet "${outputFolder}/dailyBackup${numberDailyBackups}" "${outputFolder}/weeklyBackup" "${fileNameWithoutDate}" "${numberWeeklyBackups}"
             fi
 
-            echo " moveBackupSet" "${outputFolder}" "${outputFolder}/dailyBackup" "${fileNameWithoutDate}" "${numberDailyBackups}" #######>>>>deleteme
             moveBackupSet "${outputFolder}" "${outputFolder}/dailyBackup" "${fileNameWithoutDate}" "${numberDailyBackups}"
             if [ "${numberDailyBackups}" -gt "0" ] ; then
                 # move newest files back into folder
-                echo moveFileIfExists "${outputFolder}/dailyBackup1/${host}*${date}.tar.gz" "${outputFolder}"
                 moveFileIfExists "${outputFolder}/dailyBackup1/${host}*${date}.tar.gz" "${outputFolder}"
             else
                 # remove unwanted files
