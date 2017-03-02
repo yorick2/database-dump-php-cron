@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# to run for one site run with a site name, which is in [] in sites.ini
+# e.g.
+# bash getAllDatabase.sh example.com
+
+
 ###### set variables #######
 
 outputFolder="databases"
