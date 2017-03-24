@@ -270,6 +270,13 @@ getSingleSiteDatabases () {
     fi
 }
 
+testConnectionDetails () {
+    local testSshConnection=$( ( ssh ${1} "echo true" ) & sleep 10 ; kill $! 2>/dev/null; )
+    if [ "${testSshConnection}" != "true" ]; then
+        echo "connection failure: ${1} "
+        printf "connection failure: ${1} \n" >> ${scriptDir}/dbDumpErrors.log
+    fi
+}
 ###### Run the program  #######
 
 # remove old log file
@@ -277,6 +284,15 @@ if [ -w ${scriptDir}/dbDumpErrors.log ]; then
     rm ${scriptDir}/dbDumpErrors.log
 fi
 
+echo '------ testing all connections ------'
+# useful if  ~/.ssh/known_hosts  is cleared. So all connections fired at start.
+for SEC in $_SECTIONS; do
+    # get info from ini file
+    ini_parser ${configFile} ${SEC};
+    testConnectionDetails "${user}@${host}"
+done
+
+echo '----- creating/downloading databases ------'
 # A sections array that we'll loop through
 for SEC in $_SECTIONS; do
 
